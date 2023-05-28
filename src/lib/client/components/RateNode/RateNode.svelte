@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Node, Anchor } from 'svelvet';
+  import type { ComponentProps } from 'svelte';
+  import { Node, Anchor, Slider } from 'svelvet';
 
   import { iNumber } from '$client/actions/iNumber';
 
@@ -9,11 +10,13 @@
   export let to: string[] = [];
   export let freeTo: [string, string][] = [];
 
+  export let disabled = false;
+
   export let title: string;
   export let description = '';
 
-  export let input: boolean | 'fixed' = true;
-  export let value = '';
+  export let input: ComponentProps<Slider>['parameterStore'] | undefined = undefined;
+  export let inputMode: 'slider' | 'input' = 'slider';
 
   $: connections = [...to.map((t) => [t, 'north']), ...freeTo] as Array<string | [string, string]>;
 </script>
@@ -35,18 +38,24 @@
       <p class="description">{description}</p>
       {#if input}
         {@const inputId = `${id}-probability`}
-        <div class="probability">
-          <label for={inputId}>Probability:</label>
-          <input
-            id={inputId}
-            min="0"
-            max="100"
-            use:iNumber
-            bind:value
-            disabled={input === 'fixed'}
+        {#if inputMode === 'input' || disabled}
+          <div class="probability">
+            <label for={inputId}>Probability:</label>
+            <input id={inputId} min="0" max="100" use:iNumber bind:value={$input} {disabled} />
+            <p>%</p>
+          </div>
+        {:else}
+          <Slider
+            min={0}
+            max={100}
+            step={1}
+            parameterStore={input}
+            label="Probability (%)"
+            fixed={0}
+            bgColor="var(--slider-bg-color)"
+            barColor="var(--slider-fg-color)"
           />
-          <p>%</p>
-        </div>
+        {/if}
       {/if}
       <slot />
     </div>
@@ -85,21 +94,29 @@
     &.recovered {
       --id-color: theme('colors.condition.recovered.fg');
       --bg-color: theme('colors.condition.recovered.bg');
+      --slider-bg-color: theme('colors.green.300');
+      --slider-fg-color: theme('colors.green.500');
     }
 
     &.mild {
       --id-color: theme('colors.condition.mild.fg');
       --bg-color: theme('colors.condition.mild.bg');
+      --slider-bg-color: theme('colors.yellow.300');
+      --slider-fg-color: theme('colors.yellow.500');
     }
 
     &.critical {
       --id-color: theme('colors.condition.critical.fg');
       --bg-color: theme('colors.condition.critical.bg');
+      --slider-bg-color: theme('colors.red.300');
+      --slider-fg-color: theme('colors.red.500');
     }
 
     &.dead {
       --id-color: theme('colors.condition.dead.fg');
       --bg-color: theme('colors.condition.dead.bg');
+      --slider-bg-color: theme('colors.gray.500');
+      --slider-fg-color: theme('colors.gray.700');
 
       color: white;
     }
@@ -132,6 +149,12 @@
 
   .title {
     font-size: 18px;
+  }
+
+  .content {
+    & :global(.slider-input) {
+      height: 32px;
+    }
   }
 
   .description {

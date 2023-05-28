@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Svelvet } from 'svelvet';
+  import { Svelvet, generateInput, Node } from 'svelvet';
 
   import { RateNode } from '$client/components/RateNode';
 
@@ -16,120 +16,226 @@
     return (baseY + gapY) * index;
   }
 
-  let mounted = false;
+  const inputs = generateInput({
+    // mild
+    M0: 70,
+    M1: 20,
+    M2: 20,
+    M3: 20,
+    // critical
+    C0: 30,
+    C1: 30,
+    C2: 30,
+    C3: 30,
+    C4: 30,
+    // recovered
+    R0: 10,
+    R1: 10,
+    // dead
+    D0: 10,
+    D1: 10,
+    D2: 10,
+  });
+
+  function checkScreenSetInputMode() {
+    isSliderMode = window.innerWidth < 768;
+  }
+
+  let isSliderMode = false;
+  $: inputMode = isSliderMode ? ('slider' as const) : ('input' as const);
   onMount(() => {
-    mounted = true;
+    checkScreenSetInputMode();
   });
 </script>
 
+<svelte:window on:resize={checkScreenSetInputMode} />
+
 <main>
-  <h1 class="text-center text-4xl font-bold">Infection Transition Flow</h1>
-  {#if mounted}
-    <Svelvet edgeStyle="step" fitView controls minimap TD>
-      <RateNode x={x(6)} y={y(0)} id="I" to={['M0', 'C0']} title="Infected" input={false} />
+  <h1 class="text-center text-4xl font-bold backdrop-blur-sm">Infection Transition Flow</h1>
+  <Svelvet edgeStyle="step" fitView controls minimap TD>
+    <Node useDefaults position={{ x: 200, y: 200 }}>
+      <div class="input-modes">
+        <p><strong>Input Mode:</strong></p>
+        <div class="mt-4 flex items-center gap-1">
+          <p>Input</p>
+          <input type="checkbox" class="d-toggle" bind:checked={isSliderMode} />
+          <p>Slider</p>
+        </div>
+      </div>
+    </Node>
 
-      <!-- Initial infections -->
-      <RateNode
-        x={x(2, true)}
-        y={y(1)}
-        id="M0"
-        to={['H0', 'H1']}
-        title="Mild"
-        value="70"
-        description="Initial infection in mild condition"
-      />
-      <RateNode
-        x={x(9, true)}
-        y={y(1)}
-        id="C0"
-        to={['H2', 'H3']}
-        title="Critical"
-        value="30"
-        description="Initial infection in critical condition"
-      />
+    <RateNode x={x(6)} y={y(0)} id="I" to={['M0', 'C0']} title="Infected" />
 
-      <!-- Hospitalization? -->
-      <RateNode
-        x={x(1)}
-        y={y(2)}
-        id="H0"
-        to={['M1', 'C1', 'R0']}
-        title="Not hospitalized"
-        input={false}
-      />
-      <RateNode x={x(4)} y={y(2)} id="H1" to={['B0']} title="Hospitalized" input={false} />
-      <RateNode
-        x={x(7, true)}
-        y={y(2)}
-        id="H2"
-        to={['B1', 'B2']}
-        title="Hospitalized"
-        input={false}
-      />
-      <RateNode x={x(11)} y={y(2)} id="H3" to={['D2']} title="Not hospitalized" input={false} />
+    <!-- Initial infections -->
+    <RateNode
+      x={x(2, true)}
+      y={y(1)}
+      id="M0"
+      to={['H0', 'H1']}
+      title="Mild"
+      description="Initial infection in mild condition"
+      input={$inputs.M0}
+      {inputMode}
+    />
+    <RateNode
+      x={x(9, true)}
+      y={y(1)}
+      id="C0"
+      to={['H2', 'H3']}
+      title="Critical"
+      description="Initial infection in critical condition"
+      input={$inputs.C0}
+      {inputMode}
+    />
 
-      <!-- Bed? -->
-      <RateNode
-        x={x(4)}
-        y={y(3)}
-        id="B0"
-        to={['M2', 'C2', 'R1']}
-        title="Regular Bed"
-        input={false}
-        description="Mild-conditioned patients should only be put in regular bed"
-      />
-      <RateNode
-        x={x(6, true)}
-        y={y(3)}
-        id="B1"
-        to={['C3', 'D0']}
-        title="Regular Bed"
-        input={false}
-      />
-      <RateNode x={x(9)} y={y(3)} id="B2" to={['M3', 'C4', 'D1']} title="ICU" input={false} />
+    <!-- Hospitalization? -->
+    <RateNode x={x(1)} y={y(2)} id="H0" to={['M1', 'C1', 'R0']} title="Not hospitalized" />
+    <RateNode x={x(4)} y={y(2)} id="H1" to={['B0']} title="Hospitalized" />
+    <RateNode x={x(7, true)} y={y(2)} id="H2" to={['B1', 'B2']} title="Hospitalized" />
+    <RateNode x={x(11)} y={y(2)} id="H3" to={['D2']} title="Not hospitalized" />
 
-      <!-- (Mild, not hospitalized) -->
-      <RateNode x={x(0)} y={y(4)} id="M1" to={[]} title="Mild -> Mild" />
-      <RateNode x={x(1)} y={y(4)} id="C1" to={[]} title="Mild -> Critical">
-        <p class="italic">
-          On the next round, Patient must be hospitalized in ICU (transition <strong>B2</strong>) or
-          will be dead (transition <strong>D2</strong>).
-        </p>
-      </RateNode>
-      <RateNode x={x(2)} y={y(4)} id="R0" to={[]} title="Mild -> Recovered" />
+    <!-- Bed? -->
+    <RateNode
+      x={x(4)}
+      y={y(3)}
+      id="B0"
+      to={['M2', 'C2', 'R1']}
+      title="Regular Bed"
+      description="Mild-conditioned patients should only be put in regular bed"
+    />
+    <RateNode x={x(6, true)} y={y(3)} id="B1" to={['C3', 'D0']} title="Regular Bed" />
+    <RateNode x={x(9)} y={y(3)} id="B2" to={['M3', 'C4', 'D1']} title="ICU" />
 
-      <!-- (Mild, regular bed) -->
-      <RateNode x={x(3)} y={y(4)} id="M2" to={[]} title="Mild -> Mild" />
-      <RateNode x={x(4)} y={y(4)} id="C2" to={[]} title="Mild -> Critical">
-        <p class="italic">On the next round, transition is same as in <strong>B1</strong>.</p>
-      </RateNode>
-      <RateNode x={x(5)} y={y(4)} id="R1" to={[]} title="Mild -> Recovered" />
+    <!-- (Mild, not hospitalized) -->
+    <RateNode
+      x={x(0)}
+      y={y(4)}
+      id="M1"
+      to={[]}
+      title="Mild -> Mild"
+      input={$inputs.M1}
+      {inputMode}
+    />
+    <RateNode
+      x={x(1)}
+      y={y(4)}
+      id="C1"
+      to={[]}
+      title="Mild -> Critical"
+      input={$inputs.C1}
+      {inputMode}
+    >
+      <p class="italic">
+        On the next round, Patient must be hospitalized in ICU (transition <strong>B2</strong>) or
+        will be dead (transition <strong>D2</strong>).
+      </p>
+    </RateNode>
+    <RateNode
+      x={x(2)}
+      y={y(4)}
+      id="R0"
+      to={[]}
+      title="Mild -> Recovered"
+      input={$inputs.R0}
+      {inputMode}
+    />
 
-      <!-- (Critical, regular bed) -->
-      <RateNode x={x(6)} y={y(4)} id="C3" to={[]} title="Critical -> Critical" />
-      <RateNode x={x(7)} y={y(4)} id="D0" to={[]} title="Critical -> Dead" />
-      <!-- (Critical) ICU -->
-      <RateNode x={x(8)} y={y(4)} id="M3" to={[]} title="Critical -> Mild">
-        <p class="italic">
-          On the next round, assuming patient has already been transferred to a regular bed,
-          transition will be same as in <strong>B0</strong>.
-        </p>
-      </RateNode>
-      <RateNode x={x(9)} y={y(4)} id="C4" to={[]} title="Critical -> Critical" />
-      <RateNode x={x(10)} y={y(4)} id="D1" to={[]} title="Critical -> Dead" />
+    <!-- (Mild, regular bed) -->
+    <RateNode
+      x={x(3)}
+      y={y(4)}
+      id="M2"
+      to={[]}
+      title="Mild -> Mild"
+      input={$inputs.M2}
+      {inputMode}
+    />
+    <RateNode
+      x={x(4)}
+      y={y(4)}
+      id="C2"
+      to={[]}
+      title="Mild -> Critical"
+      input={$inputs.C2}
+      {inputMode}
+    >
+      <p class="italic">On the next round, transition is same as in <strong>B1</strong>.</p>
+    </RateNode>
+    <RateNode
+      x={x(5)}
+      y={y(4)}
+      id="R1"
+      to={[]}
+      title="Mild -> Recovered"
+      input={$inputs.R1}
+      {inputMode}
+    />
 
-      <!-- Not Hospitalized -->
-      <RateNode
-        x={x(11)}
-        y={y(4)}
-        id="D2"
-        to={[]}
-        title="Critical -> Dead"
-        value="100"
-        input="fixed"
-      />
-    </Svelvet>
-  {/if}
+    <!-- (Critical, regular bed) -->
+    <RateNode
+      x={x(6)}
+      y={y(4)}
+      id="C3"
+      to={[]}
+      title="Critical -> Critical"
+      input={$inputs.C3}
+      {inputMode}
+    />
+    <RateNode
+      x={x(7)}
+      y={y(4)}
+      id="D0"
+      to={[]}
+      title="Critical -> Dead"
+      input={$inputs.D0}
+      {inputMode}
+    />
+    <!-- (Critical) ICU -->
+    <RateNode
+      x={x(8)}
+      y={y(4)}
+      id="M3"
+      to={[]}
+      title="Critical -> Mild"
+      input={$inputs.M3}
+      {inputMode}
+    >
+      <p class="italic">
+        On the next round, assuming patient has already been transferred to a regular bed,
+        transition will be same as in <strong>B0</strong>.
+      </p>
+    </RateNode>
+    <RateNode
+      x={x(9)}
+      y={y(4)}
+      id="C4"
+      to={[]}
+      title="Critical -> Critical"
+      input={$inputs.C4}
+      {inputMode}
+    />
+    <RateNode
+      x={x(10)}
+      y={y(4)}
+      id="D1"
+      to={[]}
+      title="Critical -> Dead"
+      input={$inputs.D1}
+      {inputMode}
+    />
+
+    <!-- Not Hospitalized -->
+    <RateNode
+      x={x(11)}
+      y={y(4)}
+      id="D2"
+      to={[]}
+      title="Critical -> Dead"
+      input={$inputs.D2}
+      {inputMode}
+      disabled
+    />
+  </Svelvet>
 </main>
 
 <style lang="postcss">
@@ -147,7 +253,12 @@
     translate: -50% 0;
 
     width: fit-content;
+  }
 
-    backdrop-filter: blur(2px);
+  .input-modes {
+    padding: 20px;
+    font-size: 20px;
+    background-color: theme('colors.blue.200');
+    border-radius: 10px;
   }
 </style>
