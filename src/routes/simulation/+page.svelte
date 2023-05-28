@@ -17,24 +17,26 @@
   }
 
   const inputs = generateInput({
-    // mild
+    // initial
     M0: 70,
-    M1: 20,
-    M2: 20,
-    M3: 20,
-    // critical
     C0: 30,
-    C1: 30,
-    C2: 30,
-    C3: 30,
-    C4: 30,
-    // recovered
-    R0: 10,
-    R1: 10,
-    // dead
-    D0: 10,
-    D1: 10,
-    D2: 10,
+    // mild, not hospitalized
+    M1: 30,
+    C1: 50,
+    R0: 20,
+    // mid, hospitalized into regular bed
+    M2: 30,
+    C2: 50,
+    R1: 20,
+    // critical, hospitalized into regular bed
+    C3: 50,
+    D0: 50,
+    // critical, hospitalized into ICU
+    M3: 30,
+    C4: 50,
+    D1: 20,
+    // critical, not hospitalized
+    D2: 100,
   });
 
   function checkScreenSetInputMode() {
