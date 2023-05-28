@@ -157,12 +157,12 @@
 
     & input {
       width: 80px;
-      padding: 8px;
+      padding: 4px 8px;
 
       text-align: center;
 
       background: none;
-      border: 1px solid color-mix(in srgb, currentcolor, transparent 50%);
+      border: 1px solid currentcolor;
       border-radius: 4px;
 
       &:disabled {
