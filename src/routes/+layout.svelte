@@ -1,5 +1,7 @@
 <script lang="ts">
   import '../lib/client/styles/app.css';
+
+  export let data;
 </script>
 
 <svelte:head>
@@ -7,3 +9,7 @@
 </svelte:head>
 
 <slot />
+
+<p class="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-gray-500">
+  App version {data.version}
+</p>
