@@ -109,7 +109,12 @@
       <RateNode x={x(6)} y={y(4)} id="C3" to={[]} title="Critical -> Critical" />
       <RateNode x={x(7)} y={y(4)} id="D0" to={[]} title="Critical -> Dead" />
       <!-- (Critical) ICU -->
-      <RateNode x={x(8)} y={y(4)} id="M3" to={[]} title="Critical -> Mild" />
+      <RateNode x={x(8)} y={y(4)} id="M3" to={[]} title="Critical -> Mild">
+        <p class="italic">
+          On the next round, assuming patient has already been transferred to a regular bed,
+          transition will be same as in <strong>B0</strong>.
+        </p>
+      </RateNode>
       <RateNode x={x(9)} y={y(4)} id="C4" to={[]} title="Critical -> Critical" />
       <RateNode x={x(10)} y={y(4)} id="D1" to={[]} title="Critical -> Dead" />
 

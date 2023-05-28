@@ -10,6 +10,6 @@
 
 <slot />
 
-<p class="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-gray-500">
+<p class="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-gray-500">
   App version {data.version}
 </p>
