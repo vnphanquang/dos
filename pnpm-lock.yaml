@@ -4,6 +4,9 @@ dependencies:
   lodash.debounce:
     specifier: ^4.0.8
     version: 4.0.8
+  svelvet:
+    specifier: ^7.0.48
+    version: 7.0.48(svelte@3.59.1)
 
 devDependencies:
   '@csstools/postcss-global-data':
@@ -4779,7 +4782,14 @@ packages:
   /svelte@3.59.1:
     resolution: {integrity: sha512-pKj8fEBmqf6mq3/NfrB9SLtcJcUvjYSWyePlfCqN9gujLB25RitWK8PvFzlwim6hD/We35KbPlRteuA6rnPGcQ==}
     engines: {node: '>= 8'}
-    dev: true
+
+  /svelvet@7.0.48(svelte@3.59.1):
+    resolution: {integrity: sha512-fv6M85l/eRyIjbMXX2CrTT7+1E3f4fEokM1y2budgH7IQpOA1ckBHkYKMUZlVIWvitBdYlfUAbggB+W4YX+lXw==}
+    peerDependencies:
+      svelte: ^3.58.0
+    dependencies:
+      svelte: 3.59.1
+    dev: false
 
   /svg-parser@2.0.4:
     resolution: {integrity: sha512-e4hG1hRwoOdRb37cIMSgzNsxyzKfayW6VOflrwvR+/bzrkyxY/31WkbgnQpgtrNp1SdpJvpUAGTa/ZoiPNDuRQ==}
