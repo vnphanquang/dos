@@ -1,17 +1,47 @@
-export type Role =
-  | 'PM' // policy maker - 1
-  | 'CL' // community leader - 1
-  | 'HM' // hospital manager - 1
-  | 'C'; // citizen - 4
+export const ROLES = ['Policy Maker', 'Community Leader', 'Hospital Manager', 'Citizen'] as const;
+export type Role = (typeof ROLES)[number];
 
-export type Action = {
-  id: string;
-  name: string;
-  numInfections: number;
-};
+export const HOSPITAL_BEDS = ['regular', 'icu'] as const;
+export type HospitalBed = (typeof HOSPITAL_BEDS)[number];
 
-export type HospitalBed = 'regular' | 'icu';
+export const INFECTION_TRANSITION_PROBABILITY = [
+  'M0',
+  'C0',
+  // mild, not hospitalized
+  'M1',
+  'C1',
+  'R0',
+  // mid, hospitalized into regular bed
+  'M2',
+  'C2',
+  'R1',
+  // critical, hospitalized into regular bed
+  'C3',
+  'D0',
+  // critical, hospitalized into ICU
+  'M3',
+  'C4',
+  'D1',
+  // critical, not hospitalized
+  'D2',
+] as const;
+export type InfectionTransitionProbability = (typeof INFECTION_TRANSITION_PROBABILITY)[number];
 
 export type InfectionState = 'mild' | 'critical' | 'recovered' | 'dead';
 
-export const app_version = `v${__BUILD_VERSION__}#${__BUILD_HASH__}/${__BUILD_TIMESTAMP__}`;
+export type Action = {
+  id: string;
+  role: Role;
+  name?: string;
+  description?: string;
+  hospitalCapacityDelta: Record<HospitalBed, number>;
+  infectionDelta: number;
+  infectionTransitionProbabilityDelta: Record<InfectionTransitionProbability, number>;
+};
+
+export type ActionDatasetKey =
+  | keyof Omit<Action, 'infectionTransitionProbabilityDelta' | 'hospitalCapacityDelta'>
+  | keyof Action['infectionTransitionProbabilityDelta']
+  | keyof Action['hospitalCapacityDelta'];
+
+export type ActionDatasetModel = Record<ActionDatasetKey, string>;
