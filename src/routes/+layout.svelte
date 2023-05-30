@@ -11,7 +11,7 @@
 <slot />
 
 <p
-  class="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-gray-500 backdrop-blur-sm"
+  class="fixed bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-gray-500 backdrop-blur-sm"
 >
   App version {data.version}
 </p>
