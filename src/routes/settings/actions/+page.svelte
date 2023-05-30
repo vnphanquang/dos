@@ -3,7 +3,7 @@
   import { Render, Subscribe, createTable } from 'svelte-headless-table';
 
   import { parseActionsFromCSV } from '$client/services/simulation';
-  import { INFECTION_TRANSITION_PROBABILITY, type Action, HOSPITAL_BEDS } from '$shared/types';
+  import { INFECTION_TRANSITION, type Action, HOSPITAL_BEDS } from '$shared/types';
 
   const actions = writable<Action[]>([]);
   async function handleUploadActions(event: Event) {
@@ -36,7 +36,7 @@
     }),
     table.group({
       header: 'Infection Transitioon Probability Delta',
-      columns: INFECTION_TRANSITION_PROBABILITY.map((id) =>
+      columns: INFECTION_TRANSITION.map((id) =>
         table.column({
           header: id,
           accessor: (data) => data.infectionTransitionProbabilityDelta[id],

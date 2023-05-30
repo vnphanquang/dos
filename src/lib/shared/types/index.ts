@@ -4,7 +4,7 @@ export type Role = (typeof ROLES)[number];
 export const HOSPITAL_BEDS = ['regular', 'icu'] as const;
 export type HospitalBed = (typeof HOSPITAL_BEDS)[number];
 
-export const INFECTION_TRANSITION_PROBABILITY = [
+export const INFECTION_TRANSITION = [
   'M0',
   'C0',
   // mild, not hospitalized
@@ -25,7 +25,7 @@ export const INFECTION_TRANSITION_PROBABILITY = [
   // critical, not hospitalized
   'D2',
 ] as const;
-export type InfectionTransitionProbability = (typeof INFECTION_TRANSITION_PROBABILITY)[number];
+export type InfectionTransition = (typeof INFECTION_TRANSITION)[number];
 
 export type InfectionState = 'mild' | 'critical' | 'recovered' | 'dead';
 
@@ -36,7 +36,7 @@ export type Action = {
   description?: string;
   hospitalCapacityDelta: Record<HospitalBed, number>;
   infectionDelta: number;
-  infectionTransitionProbabilityDelta: Record<InfectionTransitionProbability, number>;
+  infectionTransitionProbabilityDelta: Record<InfectionTransition, number>;
 };
 
 export type ActionDatasetKey =
@@ -45,3 +45,20 @@ export type ActionDatasetKey =
   | keyof Action['hospitalCapacityDelta'];
 
 export type ActionDatasetModel = Record<ActionDatasetKey, string>;
+
+export type SimulationSettings = {
+  actions: Action[];
+  infectionTransitionProbabilities: Record<InfectionTransition, number>;
+  initialInfectionPool: number;
+  initialHospitalCapacity: Record<HospitalBed, number>;
+  initialInfectionTransition: Record<InfectionTransition, number>;
+};
+
+export type Infection = {
+  state: InfectionState;
+  hospitalization: HospitalBed | null;
+};
+
+export type SimulationState = {
+  infections: Infection[];
+};
