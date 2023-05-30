@@ -1,20 +1,20 @@
 import { writable } from 'svelte/store';
 
-import type { Infection, SimulationSettings } from '$shared/types';
+import type { Infection, SimulationContext } from '$shared/types';
 
 import { transitionInfection } from './simulation.infection';
 
 export type Simulation = {
-  settings: SimulationSettings;
+  context: SimulationContext;
   infections: Infection[];
 };
 
-export function createSimulation(settings: SimulationSettings) {
+export function createSimulation(context: SimulationContext) {
   const history: Array<Simulation> = [];
   let infections: Infection[] = [];
 
   const { subscribe, set } = writable<Simulation>({
-    settings,
+    context,
     infections,
   });
 
@@ -25,15 +25,15 @@ export function createSimulation(settings: SimulationSettings) {
       if (popped) set(popped);
     },
     next(newInfections: Infection[]) {
-      history.push({ settings, infections });
+      history.push({ context, infections });
       infections = infections.map((i) =>
-        transitionInfection(i, settings.infectionTransitionProbabilities),
+        transitionInfection(i, context.infectionTransitionProbabilities),
       );
       infections.push(...newInfections);
-      set({ settings, infections });
+      set({ context, infections });
     },
     history() {
-      return [...history, { settings, infections }];
+      return [...history, { context, infections }];
     },
   };
 }

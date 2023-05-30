@@ -46,12 +46,12 @@ export type ActionDatasetKey =
 
 export type ActionDatasetModel = Record<ActionDatasetKey, string>;
 
-export type SimulationSettings = {
+export type SimulationContext = {
   actions: Action[];
   infectionTransitionProbabilities: Record<InfectionTransition, number>;
-  initialInfectionPool: number;
-  initialHospitalCapacity: Record<HospitalBed, number>;
-  initialInfectionTransition: Record<InfectionTransition, number>;
+  infectionPool: number;
+  baseNewInfection: number;
+  hospitalCapacity: Record<HospitalBed, number>;
 };
 
 export type Infection = {
