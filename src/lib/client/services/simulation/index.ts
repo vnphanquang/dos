@@ -1,16 +1,23 @@
-// const INITIAL_NUM_INFECTION = 100;
-// /** mild : critical */
-// const INITIAL_INFECTION_RATIO = 7 / 3;
+import type { Infection } from '$shared/types';
+import { shuffle } from '$shared/utils/shuffle';
 
-// type InfectionPool = {
-//   mild: number;
-//   critical: number;
-// };
-// export function randomizeInfectionPool(): InfectionPool {
-//   const critical = INITIAL_NUM_INFECTION / (1 + INITIAL_INFECTION_RATIO);
-//   const mild = INITIAL_NUM_INFECTION - critical;
-//   return { mild, critical };
-// }
+export function createInfectionPool(
+  total: number,
+  mildPercent: number,
+  criticalPercent: number,
+): Infection[] {
+  const totalFractions = mildPercent + criticalPercent;
+  const numMild = Math.floor(total * (mildPercent / totalFractions));
+  const numCritical = total - numMild;
+  const infections: Infection[] = [];
+  for (let i = 0; i < numMild; i += 1) {
+    infections.push({ state: 'mild', hospitalization: null });
+  }
+  for (let i = 0; i < numCritical; i += 1) {
+    infections.push({ state: 'critical', hospitalization: null });
+  }
+  return shuffle(infections);
+}
 
 export * from './simulation.dataset';
 export * from './simulation.infection';

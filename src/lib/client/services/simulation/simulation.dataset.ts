@@ -83,8 +83,9 @@ export function parseInitialContextValuesFromCSV(csv: string): Omit<SimulationCo
       regular,
       icu,
     },
-    infectionPool: 100,
-    baseNewInfection: 10,
+    // FIXME: these two options should be in the config csv??
+    totalInfections: 100,
+    newInfectionBaseDelta: 10,
     infectionTransitionProbabilities: {
       C0,
       C1,

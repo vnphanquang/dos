@@ -49,8 +49,8 @@ export type ActionDatasetModel = Record<ActionDatasetKey, string>;
 export type SimulationContext = {
   actions: Action[];
   infectionTransitionProbabilities: Record<InfectionTransition, number>;
-  infectionPool: number;
-  baseNewInfection: number;
+  totalInfections: number;
+  newInfectionBaseDelta: number;
   hospitalCapacity: Record<HospitalBed, number>;
 };
 
