@@ -10,8 +10,10 @@ import type {
 } from '$shared/types';
 
 import {
+  getSimulationHistory,
   getSimulationRuntime,
   setSimulationContext,
+  setSimulationHistory,
   setSimulationRuntime,
 } from './simulation.cache';
 import { transitionInfection } from './simulation.infection';
@@ -29,7 +31,6 @@ function initRuntime(context: SimulationContext): SimulationRuntime {
       context.infectionTransitionProbabilities.C0,
     ),
     infections: [],
-    history: [],
   };
 }
 
@@ -47,8 +48,16 @@ export function createSimulation(context: SimulationContext) {
     setSimulationRuntime(s.runtime);
   });
 
+  let history = (browser && getSimulationHistory()) || [];
+  const historyStore = writable<Simulation[]>(history);
+  historyStore.subscribe((h) => {
+    history = h;
+    setSimulationHistory(h);
+  });
+
   return {
     subscribe,
+    history: historyStore,
     queueAction(action: Action) {
       update((s) => ({
         ...s,
@@ -81,15 +90,18 @@ export function createSimulation(context: SimulationContext) {
     },
     restart() {
       set({ context, runtime: initRuntime(context) });
+      historyStore.set([]);
     },
     undo() {
-      const popped = simulation.runtime.history.pop();
+      const popped = history.pop();
       if (!popped) return;
       set(popped);
+      historyStore.set([...history]);
     },
     // TODO: support forwarding (redo) with history??
     next() {
-      simulation.runtime.history.push(structuredClone(simulation));
+      history.push(structuredClone(simulation));
+      historyStore.set([...history]);
 
       // apply actions
       let infectionDelta = context.newInfectionBaseDelta;
@@ -112,12 +124,13 @@ export function createSimulation(context: SimulationContext) {
 
       // random new infections
       const newInfections: Infection[] = [];
-      if (infectionDelta > 0) {
+      if (infectionDelta > 0 && simulation.runtime.infectionPool.length > 0) {
         for (let i = 0; i < infectionDelta; i += 1) {
           const [spliced] = simulation.runtime.infectionPool.splice(
             Math.random() * simulation.runtime.infectionPool.length,
             1,
           );
+          if (!spliced) break;
           newInfections.push(spliced);
         }
       }

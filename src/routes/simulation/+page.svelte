@@ -24,6 +24,7 @@
   const flipDurationMs = 300;
 
   $: simulation = data.simulation;
+  $: history = simulation?.history;
 
   $: stats = getInfectionStats($simulation?.runtime.infections ?? []);
   // TODO: optimize this??
@@ -294,17 +295,17 @@
         type="button"
         class="d-btn-outline d-btn pc:min-w-[120px]"
         on:click={simulationUndo}
-        disabled={!$simulation?.runtime.history.length}>Undo</button
+        disabled={!$history?.length}>Undo</button
       >
       <button
         type="button"
         class="d-btn-outline d-btn pc:min-w-[120px]"
         on:click={simulationRestart}
-        disabled={!$simulation?.runtime.history.length}>Restart</button
+        disabled={!$history?.length}>Restart</button
       >
     </div>
     <div class="grid h-8 w-8 place-items-center rounded-full bg-secondary">
-      {$simulation?.runtime.history.length ?? 0}
+      {$history?.length ?? 0}
     </div>
     <div class="flex gap-4">
       <button

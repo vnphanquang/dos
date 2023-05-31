@@ -61,7 +61,6 @@ export type SimulationRuntime = {
   infectionPool: Infection[];
   infections: Infection[];
   queuedActions: Action[];
-  history: Simulation[];
 };
 
 export type Simulation = {
