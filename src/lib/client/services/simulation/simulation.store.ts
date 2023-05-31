@@ -29,13 +29,11 @@ function initRuntime(context: SimulationContext): SimulationRuntime {
       context.infectionTransitionProbabilities.C0,
     ),
     infections: [],
+    history: [],
   };
 }
 
 export function createSimulation(context: SimulationContext) {
-  // TODO: save history of actions too?
-  let history: Array<Simulation> = [];
-
   let simulation: Simulation = {
     context,
     runtime: (browser && getSimulationRuntime()) || initRuntime(context),
@@ -82,17 +80,16 @@ export function createSimulation(context: SimulationContext) {
       }));
     },
     restart() {
-      history = [];
       set({ context, runtime: initRuntime(context) });
     },
     undo() {
-      const popped = history.pop();
+      const popped = simulation.runtime.history.pop();
       if (!popped) return;
       set(popped);
     },
     // TODO: support forwarding (redo) with history??
     next() {
-      history.push(structuredClone(simulation));
+      simulation.runtime.history.push(structuredClone(simulation));
 
       // apply actions
       let infectionDelta = context.newInfectionBaseDelta;
@@ -126,7 +123,7 @@ export function createSimulation(context: SimulationContext) {
       }
       simulation.runtime.infections.push(...newInfections);
 
-      set(simulation);
+      set({ ...simulation });
 
       return newInfections;
     },

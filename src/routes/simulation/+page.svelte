@@ -294,16 +294,18 @@
         type="button"
         class="d-btn-outline d-btn pc:min-w-[120px]"
         on:click={simulationUndo}
-        disabled={false}>Undo</button
+        disabled={!$simulation?.runtime.history.length}>Undo</button
       >
       <button
         type="button"
         class="d-btn-outline d-btn pc:min-w-[120px]"
         on:click={simulationRestart}
-        disabled={false}>Restart</button
+        disabled={!$simulation?.runtime.history.length}>Restart</button
       >
     </div>
-    <div class="grid h-8 w-8 place-items-center rounded-full bg-secondary">1</div>
+    <div class="grid h-8 w-8 place-items-center rounded-full bg-secondary">
+      {$simulation?.runtime.history.length ?? 0}
+    </div>
     <div class="flex gap-4">
       <button
         type="button"
