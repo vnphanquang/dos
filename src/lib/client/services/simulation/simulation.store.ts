@@ -7,9 +7,10 @@ import { transitionInfection } from './simulation.infection';
 import { createInfectionPool } from '.';
 
 export type Simulation = {
-  infectionPool: Infection[];
   context: SimulationContext;
+  infectionPool: Infection[];
   infections: Infection[];
+  queuedActions: Action[];
 };
 
 export function createSimulation(context: SimulationContext) {
@@ -21,32 +22,46 @@ export function createSimulation(context: SimulationContext) {
     context.infectionTransitionProbabilities.M0,
     context.infectionTransitionProbabilities.C0,
   );
+  let queuedActions: Action[] = [];
 
-  const { subscribe, set } = writable<Simulation>({
+  const { subscribe, set, update } = writable<Simulation>({
     context,
     infections,
     infectionPool,
+    queuedActions,
   });
 
   return {
     subscribe,
-    previous() {
-      const popped = history.pop();
-      if (!popped) return;
-      ({ context, infectionPool, infections } = popped);
+    history: {
+      undo() {
+        const popped = history.pop();
+        if (!popped) return;
+        ({ context, infectionPool, infections } = popped);
+      },
+      // TODO: support forwarding (redo) with history
     },
-    next(actions: Action[]) {
+    queueAction(action: Action) {
+      queuedActions = [...queuedActions, action];
+      update((s) => ({ ...s, queuedActions }));
+    },
+    dequeueAction(...actions: Action[]) {
+      queuedActions = queuedActions.filter((a) => !actions.includes(a));
+      update((s) => ({ ...s, queuedActions }));
+    },
+    next() {
       history.push(
         structuredClone({
           context,
           infections,
           infectionPool,
+          queuedActions,
         }),
       );
 
       // apply actions
       let infectionDelta = context.newInfectionBaseDelta;
-      for (const action of actions) {
+      for (const action of queuedActions) {
         context.hospitalCapacity.regular += action.hospitalCapacityDelta.regular;
         context.hospitalCapacity.icu += action.hospitalCapacityDelta.icu;
         for (const [key, value] of Object.entries(action.infectionTransitionProbabilityDelta)) {
@@ -56,6 +71,7 @@ export function createSimulation(context: SimulationContext) {
         }
         infectionDelta += action.infectionDelta;
       }
+      queuedActions = [];
 
       // transition existing infections
       infections = infections.map((i) =>
@@ -72,12 +88,9 @@ export function createSimulation(context: SimulationContext) {
       }
       infections.push(...newInfections);
 
-      set({ context, infections, infectionPool });
+      set({ context, infections, infectionPool, queuedActions });
 
       return newInfections;
-    },
-    history() {
-      return [...history, { context, infections, infectionPool }];
     },
   };
 }
