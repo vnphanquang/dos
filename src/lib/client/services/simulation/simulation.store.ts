@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 
 import type { Action, Infection, SimulationContext } from '$shared/types';
 
+import { setSimulationContext } from './simulation.cache';
 import { transitionInfection } from './simulation.infection';
 
 import { createInfectionPool } from '.';
@@ -13,10 +14,7 @@ export type Simulation = {
   queuedActions: Action[];
 };
 
-export const SESSION_STORAGE_KEYS = {
-  SIMULATION: 'simulation',
-  SIMULATION_HISTORY: 'simulation-history',
-} as const;
+export type SimulationStore = ReturnType<typeof createSimulation>;
 
 export function createSimulation(context: SimulationContext) {
   // TODO: save history of actions too?
@@ -41,8 +39,7 @@ export function createSimulation(context: SimulationContext) {
   }
 
   subscribe((s) => {
-    sessionStorage.set(SESSION_STORAGE_KEYS.SIMULATION, JSON.stringify(s));
-    sessionStorage.set(SESSION_STORAGE_KEYS.SIMULATION_HISTORY, JSON.stringify(history));
+    setSimulationContext(s.context);
   });
 
   return {

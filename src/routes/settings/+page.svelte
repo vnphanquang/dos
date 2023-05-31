@@ -1,15 +1,22 @@
 <script lang="ts">
+  import { invalidate } from '$app/navigation';
   import { parseSimulationContextFromCSV } from '$client/services/simulation';
-  import type { SimulationContext } from '$shared/types';
+  import { setSimulationContext } from '$client/services/simulation/simulation.cache';
+  import { LOAD_DEPENDENCIES } from '$shared/constants';
 
-  let context: SimulationContext;
+  export let data;
+
   async function handleUploadSettings(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return [];
     const csvStr = await file.text();
-    context = parseSimulationContextFromCSV(csvStr);
-    console.log(context);
+    const context = parseSimulationContextFromCSV(csvStr);
+    setSimulationContext(context);
+    invalidate(LOAD_DEPENDENCIES.SIMULATION.CONTEXT);
   }
+
+  $: simulation = data.simulation;
+  $: context = $simulation?.context;
 </script>
 
 <main class="c-page space-y-8">

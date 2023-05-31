@@ -4,7 +4,13 @@
 
   import { INFECTION_TRANSITION, type Action, HOSPITAL_BEDS } from '$shared/types';
 
+  export let data;
+
+  $: ({ simulation } = data);
+
   const actions = writable<Action[]>([]);
+  $: actions.set($simulation?.context.actions ?? []);
+
   const table = createTable(actions);
   const columns = table.createColumns([
     table.column({
@@ -98,7 +104,6 @@
   .table-actions {
     overflow: auto;
     max-width: 100%;
-    max-height: 100dvh;
 
     & thead :global(tr:nth-child(2)) {
       position: sticky;

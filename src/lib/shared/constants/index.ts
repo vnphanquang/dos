@@ -1,0 +1,5 @@
+export const LOAD_DEPENDENCIES = {
+  SIMULATION: {
+    CONTEXT: 'SIMULATION:CONTEXT',
+  },
+};

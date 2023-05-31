@@ -3,6 +3,11 @@
   import { Svelvet, generateInput, Node } from 'svelvet';
 
   import { InfectionFlowNode } from '$client/components/InfectionFlowNode';
+  import { INFECTION_TRANSITION, type InfectionTransition } from '$shared/types/index.js';
+
+  export let data;
+
+  $: ({ simulation } = data);
 
   const baseX = 300;
   const gapX = 50;
@@ -16,28 +21,16 @@
     return (baseY + gapY) * index;
   }
 
-  const inputs = generateInput({
-    // initial
-    M0: 70,
-    C0: 30,
-    // mild, not hospitalized
-    M1: 30,
-    C1: 50,
-    R0: 20,
-    // mid, hospitalized into regular bed
-    M2: 30,
-    C2: 50,
-    R1: 20,
-    // critical, hospitalized into regular bed
-    C3: 50,
-    D0: 50,
-    // critical, hospitalized into ICU
-    M3: 30,
-    C4: 50,
-    D1: 20,
-    // critical, not hospitalized
-    D2: 100,
-  });
+  function generateDefaultTransitionProbability(): Record<InfectionTransition, number> {
+    return Object.fromEntries(INFECTION_TRANSITION.map((transition) => [transition, 0])) as Record<
+      InfectionTransition,
+      number
+    >;
+  }
+
+  $: inputs = generateInput(
+    $simulation?.context.infectionTransitionProbabilities ?? generateDefaultTransitionProbability(),
+  );
 
   function checkScreenSetInputMode() {
     isSliderMode = window.innerWidth < 768;
