@@ -58,6 +58,7 @@ export type SimulationContext = {
 };
 
 export type Infection = {
+  id: string;
   state: InfectionState;
   hospitalization: Hospitalization;
 };

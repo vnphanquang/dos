@@ -56,6 +56,7 @@
     "stylelint-config-standard": "^33.0.0",
     "svelte": "^3.59.1",
     "svelte-check": "^3.4.3",
+    "svelte-dnd-action": "^0.9.22",
     "svelte-headless-table": "^0.17.3",
     "tailwindcss": "^3.3.2",
     "tiny-glob": "^0.2.9",

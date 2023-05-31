@@ -141,5 +141,5 @@ export function transitionInfection(
 
   transitions = getInfectionTransitions({ state, hospitalization });
 
-  return { state, hospitalization };
+  return { ...infection, state, hospitalization };
 }

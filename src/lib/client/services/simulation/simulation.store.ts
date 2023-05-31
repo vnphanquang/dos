@@ -19,12 +19,12 @@ export type SimulationStore = ReturnType<typeof createSimulation>;
 export function createSimulation(context: SimulationContext) {
   // TODO: save history of actions too?
   const history: Array<Simulation> = [];
-  let infections: Infection[] = [];
   let infectionPool = createInfectionPool(
     context.totalInfections,
     context.infectionTransitionProbabilities.M0,
     context.infectionTransitionProbabilities.C0,
   );
+  let infections: Infection[] = [];
   let queuedActions: Action[] = [];
 
   const { subscribe, set, update } = writable<Simulation>({
@@ -59,6 +59,13 @@ export function createSimulation(context: SimulationContext) {
     dequeueAction(...actions: Action[]) {
       queuedActions = queuedActions.filter((a) => !actions.includes(a));
       update((s) => ({ ...s, queuedActions }));
+    },
+    getInfectionById(id: string) {
+      return infections.find((i) => i.id === id);
+    },
+    updateInfection(infection: Infection) {
+      infections = infections.map((i) => (i.id === infection.id ? infection : i));
+      update((s) => ({ ...s, infections }));
     },
     next() {
       history.push(structuredClone(current()));
