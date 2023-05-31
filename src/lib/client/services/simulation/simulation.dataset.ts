@@ -38,6 +38,7 @@ export function parseActionsFromCSV(csv: string): Action[] {
   const records: ActionDatasetModel[] = parse(csv, {
     fromLine: 4,
     skipEmptyLines: true,
+    relaxColumnCountMore: true,
     columns: [
       'id',
       'role',
@@ -71,21 +72,37 @@ export function parseInitialContextValuesFromCSV(csv: string): Omit<SimulationCo
     fromLine: 3,
     toLine: 3,
   });
-  const [M0, C0, M1, C1, R0, M2, C2, R1, C3, D0, M3, C4, D1, D2, regular, icu] = parsed[0]
-    .slice(5)
-    .map((v: string) => {
-      let numStr = v as string;
-      if (numStr.endsWith('%')) numStr = numStr.slice(0, -1);
-      return Number(numStr);
-    });
+  const [
+    M0,
+    C0,
+    M1,
+    C1,
+    R0,
+    M2,
+    C2,
+    R1,
+    C3,
+    D0,
+    M3,
+    C4,
+    D1,
+    D2,
+    regular,
+    icu,
+    totalInfections,
+    newInfectionBaseDelta,
+  ] = parsed[0].slice(5).map((v: string) => {
+    let numStr = v as string;
+    if (numStr.endsWith('%')) numStr = numStr.slice(0, -1);
+    return Number(numStr);
+  });
   return {
     hospitalCapacity: {
       regular,
       icu,
     },
-    // FIXME: these two options should be in the config csv??
-    totalInfections: 100,
-    newInfectionBaseDelta: 10,
+    totalInfections,
+    newInfectionBaseDelta,
     infectionTransitionProbabilities: {
       M0,
       C0,
