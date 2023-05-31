@@ -1,7 +1,13 @@
 import { writable } from 'svelte/store';
 
 import { browser } from '$app/environment';
-import type { Action, Infection, Simulation, SimulationContext } from '$shared/types';
+import type {
+  Action,
+  Infection,
+  Simulation,
+  SimulationContext,
+  SimulationRuntime,
+} from '$shared/types';
 
 import {
   getSimulationRuntime,
@@ -14,21 +20,25 @@ import { createInfectionPool } from '.';
 
 export type SimulationStore = ReturnType<typeof createSimulation>;
 
+function initRuntime(context: SimulationContext): SimulationRuntime {
+  return {
+    queuedActions: [],
+    infectionPool: createInfectionPool(
+      context.totalInfections,
+      context.infectionTransitionProbabilities.M0,
+      context.infectionTransitionProbabilities.C0,
+    ),
+    infections: [],
+  };
+}
+
 export function createSimulation(context: SimulationContext) {
   // TODO: save history of actions too?
-  const history: Array<Simulation> = [];
+  let history: Array<Simulation> = [];
 
   let simulation: Simulation = {
     context,
-    runtime: (browser && getSimulationRuntime()) || {
-      queuedActions: [],
-      infectionPool: createInfectionPool(
-        context.totalInfections,
-        context.infectionTransitionProbabilities.M0,
-        context.infectionTransitionProbabilities.C0,
-      ),
-      infections: [],
-    },
+    runtime: (browser && getSimulationRuntime()) || initRuntime(context),
   };
 
   const { subscribe, set, update } = writable<Simulation>(simulation);
@@ -41,14 +51,6 @@ export function createSimulation(context: SimulationContext) {
 
   return {
     subscribe,
-    history: {
-      undo() {
-        const popped = history.pop();
-        if (!popped) return;
-        simulation = popped;
-      },
-      // TODO: support forwarding (redo) with history
-    },
     queueAction(action: Action) {
       update((s) => ({
         ...s,
@@ -79,6 +81,16 @@ export function createSimulation(context: SimulationContext) {
         },
       }));
     },
+    restart() {
+      history = [];
+      set({ context, runtime: initRuntime(context) });
+    },
+    undo() {
+      const popped = history.pop();
+      if (!popped) return;
+      set(popped);
+    },
+    // TODO: support forwarding (redo) with history??
     next() {
       history.push(structuredClone(simulation));
 
@@ -117,6 +129,9 @@ export function createSimulation(context: SimulationContext) {
       set(simulation);
 
       return newInfections;
+    },
+    end() {
+      //
     },
   };
 }

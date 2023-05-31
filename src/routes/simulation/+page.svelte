@@ -26,7 +26,11 @@
   $: simulation = data.simulation;
 
   $: stats = getInfectionStats($simulation?.runtime.infections ?? []);
-  $: iByHos = categorizeInfectionsByHospitalization($simulation?.runtime.infections ?? []);
+  // TODO: optimize this??
+  $: iByHos = categorizeInfectionsByHospitalization(
+    $simulation?.runtime.infections.filter((i) => i.state === 'mild' || i.state === 'critical') ??
+      [],
+  );
 
   // TODO: possible to keep order on dropped (right now it jumps around);
   function handleDndConsider(e: CustomEvent<DndEvent<Infection>>, hos: Hospitalization) {
@@ -80,9 +84,25 @@
       threshold: 0.5,
     });
   });
+
+  function simulationUndo() {
+    simulation?.undo();
+  }
+
+  function simulationRestart() {
+    simulation?.restart();
+  }
+
+  function simulationNext() {
+    simulation?.next();
+  }
+
+  function simulationEnd() {
+    simulation?.end();
+  }
 </script>
 
-<main class="c-page c-page--full py-10">
+<main class="c-page c-page--full pt-10">
   <h1 class="mb-10 text-center text-4xl font-bold">Simulation</h1>
 
   <section class="space-y-4 bg-base-200 p-10">
@@ -188,6 +208,7 @@
     </div>
 
     <div class="d-divider text-gray-500">Patient Distribution</div>
+    <p class="text-sm">Drag and drop patient to match desired hospitalization status</p>
     <div class="hospitalization-dnd">
       <p>No hospitalization</p>
       <p>Regular Bed</p>
@@ -212,6 +233,7 @@
       <h2 class="flex-1">Actions</h2>
       <a href="/settings/actions" class="d-btn-ghost d-btn">Check Action Table</a>
     </div>
+    <p class="text-sm">Search, add, or remove actions that will be applied in next round</p>
     <div class="relative" use:clickoutside on:clickoutside|stopPropagation={blurActionSearch}>
       <label for="action-search" class="peer relative">
         <svg
@@ -266,9 +288,32 @@
     </ul>
   </section>
 
-  <section class="mt-10 flex justify-between px-10">
-    <button type="button" class="d-btn-outline d-btn min-w-[120px]">Undo</button>
-    <button type="button" class="d-btn-primary d-btn min-w-[120px]">Next</button>
+  <section class="sticky bottom-0 flex items-center justify-between gap-4 bg-white p-4 px-10">
+    <div class="flex gap-4">
+      <button
+        type="button"
+        class="d-btn-outline d-btn pc:min-w-[120px]"
+        on:click={simulationUndo}
+        disabled={false}>Undo</button
+      >
+      <button
+        type="button"
+        class="d-btn-outline d-btn pc:min-w-[120px]"
+        on:click={simulationRestart}
+        disabled={false}>Restart</button
+      >
+    </div>
+    <div class="grid h-8 w-8 place-items-center rounded-full bg-secondary">1</div>
+    <div class="flex gap-4">
+      <button
+        type="button"
+        class="d-btn-outline d-btn-primary d-btn pc:min-w-[120px]"
+        on:click={simulationEnd}>End</button
+      >
+      <button type="button" class="d-btn-primary d-btn pc:min-w-[120px]" on:click={simulationNext}
+        >Next</button
+      >
+    </div>
   </section>
 </main>
 
@@ -313,7 +358,7 @@
     & .infection {
       cursor: grab;
       padding: 8px;
-      background-color: theme('colors.neutral-100');
+      background-color: theme('colors.neutral-200');
       border-radius: 4px;
 
       &:active {
