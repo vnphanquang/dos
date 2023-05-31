@@ -3,6 +3,8 @@ export type Role = (typeof ROLES)[number];
 
 export const HOSPITAL_BEDS = ['regular', 'icu'] as const;
 export type HospitalBed = (typeof HOSPITAL_BEDS)[number];
+export const HOSPITALIZATIONS = ['none', ...HOSPITAL_BEDS] as const;
+export type Hospitalization = (typeof HOSPITALIZATIONS)[number];
 
 export const INFECTION_TRANSITION = [
   'M0',
@@ -27,7 +29,8 @@ export const INFECTION_TRANSITION = [
 ] as const;
 export type InfectionTransition = (typeof INFECTION_TRANSITION)[number];
 
-export type InfectionState = 'mild' | 'critical' | 'recovered' | 'dead';
+export const INFECTION_STATES = ['mild', 'critical', 'recovered', 'dead'] as const;
+export type InfectionState = (typeof INFECTION_STATES)[number];
 
 export type Action = {
   id: string;
@@ -56,9 +59,27 @@ export type SimulationContext = {
 
 export type Infection = {
   state: InfectionState;
-  hospitalization: HospitalBed | null;
+  hospitalization: Hospitalization;
 };
 
 export type SimulationState = {
   infections: Infection[];
+};
+
+export type InfectionStats = {
+  total: number;
+  byState: Record<
+    InfectionState,
+    {
+      total: number;
+      byHospitalization: Record<Hospitalization, number>;
+    }
+  >;
+  byHospitalization: Record<
+    Hospitalization,
+    {
+      total: number;
+      byState: Record<InfectionState, number>;
+    }
+  >;
 };
