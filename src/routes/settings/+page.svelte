@@ -91,9 +91,9 @@
   </section>
   <div class="d-divider" />
   <section class="space-y-4" class:opacity-25={!context}>
-    <h2>3. Start simulation</h2>
+    <h2>3. Start / continue simulation</h2>
     <a class="d-btn-primary d-btn w-full" href="/simulation" data-disabled={!context}
-      >Start Simulation</a
+      >Go to Simulation</a
     >
   </section>
 </main>

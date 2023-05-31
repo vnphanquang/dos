@@ -18,6 +18,9 @@ devDependencies:
   '@csstools/postcss-global-data':
     specifier: ^1.0.3
     version: 1.0.3(postcss@8.4.23)
+  '@svelte-put/clickoutside':
+    specifier: ^2.0.0
+    version: 2.0.0
   '@svelte-put/preprocess-inline-svg':
     specifier: ^2.1.1
     version: 2.1.1(svelte@3.59.1)
@@ -72,6 +75,9 @@ devDependencies:
   eslint-plugin-svelte:
     specifier: ^2.29.0
     version: 2.29.0(eslint@8.41.0)(svelte@3.59.1)
+  fuse.js:
+    specifier: ^6.6.2
+    version: 6.6.2
   hygen:
     specifier: ^6.2.11
     version: 6.2.11
@@ -555,6 +561,10 @@ packages:
 
   /@polka/url@1.0.0-next.21:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
+    dev: true
+
+  /@svelte-put/clickoutside@2.0.0:
+    resolution: {integrity: sha512-04xYxOT5Ti+VlP70+uY/a5tGnVWl3XFgnRiO9bMSHbkwOlzHxSgXyM1NCS4NV09B3i41LRuShgeMrbgU0J5cPg==}
     dev: true
 
   /@svelte-put/preprocess-inline-svg@2.1.1(svelte@3.59.1):
@@ -2273,6 +2283,11 @@ packages:
 
   /functions-have-names@1.2.3:
     resolution: {integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==}
+    dev: true
+
+  /fuse.js@6.6.2:
+    resolution: {integrity: sha512-cJaJkxCCxC8qIIcPBF9yGxY0W/tVZS3uEISDxhYIdtk8OL93pe+6Zj7LjCqVV4dzbqcriOZ+kQ/NE4RXZHsIGA==}
+    engines: {node: '>=10'}
     dev: true
 
   /get-intrinsic@1.2.1:

@@ -1,5 +1,10 @@
 <script lang="ts">
+  import { clickoutside } from '@svelte-put/clickoutside';
+  import Fuse from 'fuse.js';
+  import debounce from 'lodash.debounce';
+  import { onMount } from 'svelte';
   import { flip } from 'svelte/animate';
+  import { slide } from 'svelte/transition';
   import { dndzone } from 'svelte-dnd-action';
 
   import {
@@ -11,6 +16,7 @@
     INFECTION_STATES,
     type Hospitalization,
     type Infection,
+    type Action,
   } from '$shared/types';
 
   export let data;
@@ -36,13 +42,55 @@
       simulation?.updateInfection(infection);
     }
   }
+
+  let actionSearchQuery = '';
+  let actionSearchResult: Action[] = [];
+  let actionSearchFocused = false;
+  let fuse: Fuse<Action> | undefined;
+
+  $: search(actionSearchQuery.trim());
+
+  const search = debounce((query: string) => {
+    if (!fuse) return;
+    actionSearchResult = fuse.search(query).map((r) => r.item);
+    console.log(actionSearchResult);
+  }, 250);
+
+  function handleSelectAction(action: Action) {
+    blurActionSearch();
+    simulation?.queueAction(action);
+  }
+
+  function handleRemoveAction(action: Action) {
+    simulation?.dequeueAction(action);
+  }
+
+  function focusActionSearch() {
+    actionSearchFocused = true;
+  }
+
+  function blurActionSearch() {
+    actionSearchFocused = false;
+  }
+
+  onMount(() => {
+    fuse = new Fuse($simulation?.context.actions ?? [], {
+      keys: ['id', 'name', 'description'],
+      includeScore: true,
+      useExtendedSearch: true,
+      threshold: 0.5,
+    });
+  });
 </script>
 
 <main class="c-page c-page--full py-10">
   <h1 class="mb-10 text-center text-4xl font-bold">Simulation</h1>
 
   <section class="space-y-4 bg-base-200 p-10">
-    <h2>Infections</h2>
+    <div class="flex items-center">
+      <h2 class="flex-1">Infections</h2>
+      <a href="/settings/infection" class="d-btn-ghost d-btn">Check Infection Transition Flow</a>
+    </div>
     <div class="d-stats grid-cols-2">
       <div class="d-stat gap-y-2">
         <div class="d-stat-figure">
@@ -86,7 +134,10 @@
   </section>
 
   <section class="space-y-4 p-10">
-    <h2>Hospitalization</h2>
+    <div class="flex items-center">
+      <h2 class="flex-1">Hospitalization</h2>
+      <a href="/settings" class="d-btn-ghost d-btn">Check Settings</a>
+    </div>
     <div class="d-stats grid-cols-2">
       <div class="d-stat gap-y-2">
         <div class="d-stat-figure">
@@ -157,8 +208,68 @@
     </div>
   </section>
 
-  <section class="space-y-4 bg-base-200 p-10">
-    <h2>Actions</h2>
+  <section class="min-h-[500px] space-y-4 bg-base-200 p-10">
+    <div class="flex items-center">
+      <h2 class="flex-1">Actions</h2>
+      <a href="/settings/actions" class="d-btn-ghost d-btn">Check Action Table</a>
+    </div>
+    <div class="relative" use:clickoutside on:clickoutside|stopPropagation={blurActionSearch}>
+      <label for="action-search" class="peer relative">
+        <svg
+          inline-src="lucide/search"
+          width="24"
+          height="24"
+          class="absolute left-2 top-1/2 -translate-y-1/2"
+        />
+        <input
+          id="action-search"
+          type="text"
+          class="d-input w-full pl-10"
+          placeholder="Type to search for action"
+          bind:value={actionSearchQuery}
+          on:focus={focusActionSearch}
+        />
+      </label>
+      {#if actionSearchResult.length && actionSearchFocused}
+        <ul
+          transition:slide
+          class="absolute inset-x-0 top-full mt-2 max-h-[360px] overflow-auto border border-neutral-100 bg-neutral-100 py-2"
+        >
+          {#each actionSearchResult as action}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <li
+              class="cursor-pointer p-2 hover:bg-neutral-200"
+              on:click={() => handleSelectAction(action)}
+            >
+              {action.id} ({action.role}) - {action.name}
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    </div>
+    <div class="d-divider">Queued Actions</div>
+    <ul class="space-y-2">
+      {#each $simulation?.queuedActions ?? [] as action}
+        <li>
+          <div class="flex items-center rounded bg-neutral-300 p-2">
+            <div class="flex-1">
+              <p class="text-sm text-gray-500">{action.id} ({action.role})</p>
+              <p class="text-lg">{action.name}</p>
+            </div>
+            <button
+              type="button"
+              class="d-btn-ghost d-btn"
+              on:click={() => handleRemoveAction(action)}>Remove</button
+            >
+          </div>
+        </li>
+      {/each}
+    </ul>
+  </section>
+
+  <section class="mt-10 flex justify-between px-10">
+    <button type="button" class="d-btn-outline d-btn min-w-[120px]">Undo</button>
+    <button type="button" class="d-btn-primary d-btn min-w-[120px]">Next</button>
   </section>
 </main>
 

@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@csstools/postcss-global-data": "^1.0.3",
+    "@svelte-put/clickoutside": "^2.0.0",
     "@svelte-put/preprocess-inline-svg": "^2.1.1",
     "@sveltejs/adapter-cloudflare": "2.3.0",
     "@sveltejs/kit": "^1.19.0",
@@ -35,6 +36,7 @@
     "eslint": "^8.41.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-svelte": "^2.29.0",
+    "fuse.js": "^6.6.2",
     "hygen": "^6.2.11",
     "lint-staged": "^13.2.2",
     "npm-run-all": "^4.1.5",
