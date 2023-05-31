@@ -5,12 +5,12 @@ import { LOAD_DEPENDENCIES } from '$shared/constants';
 
 import type { LayoutLoad } from './$types';
 
-export const load: LayoutLoad = ({ depends }) => {
+export const load: LayoutLoad = ({ depends, data }) => {
   depends(LOAD_DEPENDENCIES.SIMULATION.CONTEXT);
   let simulation: SimulationStore | null = null;
   if (browser) {
     const context = getSimulationContext();
     if (context) simulation = createSimulation(context);
   }
-  return { simulation };
+  return { simulation, ...data };
 };
