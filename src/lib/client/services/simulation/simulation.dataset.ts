@@ -71,7 +71,7 @@ export function parseInitialContextValuesFromCSV(csv: string): Omit<SimulationCo
     fromLine: 3,
     toLine: 3,
   });
-  const [M0, C0, M1, C1, R0, M2, C2, R1, C3, D0, M3, C4, D1, D2, regular, icu] = parsed
+  const [M0, C0, M1, C1, R0, M2, C2, R1, C3, D0, M3, C4, D1, D2, regular, icu] = parsed[0]
     .slice(5)
     .map((v: string) => {
       let numStr = v as string;
@@ -87,20 +87,20 @@ export function parseInitialContextValuesFromCSV(csv: string): Omit<SimulationCo
     totalInfections: 100,
     newInfectionBaseDelta: 10,
     infectionTransitionProbabilities: {
+      M0,
       C0,
+      M1,
       C1,
+      R0,
+      M2,
       C2,
+      R1,
       C3,
-      C4,
       D0,
+      M3,
+      C4,
       D1,
       D2,
-      M0,
-      M1,
-      M2,
-      M3,
-      R0,
-      R1,
     },
   };
 }
