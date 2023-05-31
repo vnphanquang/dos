@@ -2,16 +2,9 @@
   import { writable } from 'svelte/store';
   import { Render, Subscribe, createTable } from 'svelte-headless-table';
 
-  import { parseActionsFromCSV } from '$client/services/simulation';
   import { INFECTION_TRANSITION, type Action, HOSPITAL_BEDS } from '$shared/types';
 
   const actions = writable<Action[]>([]);
-  async function handleUploadActions(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return [];
-    const csvStr = await file.text();
-    actions.set(parseActionsFromCSV(csvStr));
-  }
   const table = createTable(actions);
   const columns = table.createColumns([
     table.column({
@@ -57,20 +50,7 @@
   const { headerRows, rows, tableAttrs, tableBodyAttrs } = table.createViewModel(columns);
 </script>
 
-<main class="space-y-10">
-  <section class="grid place-items-center space-y-10 pt-8 pc:pt-10">
-    <h1 class="text-center text-4xl font-bold">Actions</h1>
-    <input
-      type="file"
-      name="actions"
-      id="actions"
-      multiple={false}
-      accept=".csv"
-      on:change={handleUploadActions}
-      class="d-file-input-primary d-file-input w-10/12"
-    />
-  </section>
-
+<main class="c-page c-page--full space-y-10">
   <section class="table-actions">
     {#if $actions.length}
       <table {...$tableAttrs} class="d-table-zebra d-table d-table-compact min-w-full">

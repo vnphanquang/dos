@@ -1,18 +1,18 @@
 <script lang="ts">
   import { parseSimulationContextFromCSV } from '$client/services/simulation';
+  import type { SimulationContext } from '$shared/types';
 
-  let initialized = false;
+  let context: SimulationContext;
   async function handleUploadSettings(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return [];
     const csvStr = await file.text();
-    const context = parseSimulationContextFromCSV(csvStr);
+    context = parseSimulationContextFromCSV(csvStr);
     console.log(context);
-    initialized = true;
   }
 </script>
 
-<main class="space-y-10 p-8 pc:p-10">
+<main class="c-page space-y-8">
   <h1 class="text-center text-4xl font-bold">Simulation Settings</h1>
 
   <section class="space-y-4">
@@ -27,20 +27,65 @@
       class="d-file-input-primary d-file-input w-full"
     />
   </section>
-
-  <section class="space-y-4" class:opacity-25={!initialized}>
+  <div class="d-divider" />
+  <section class="space-y-4" class:opacity-25={!context}>
     <h2>2. Review settings</h2>
-    <div class="grid grid-cols-2 gap-10">
-      <a class="d-btn-info d-btn" href="/settings/actions" data-disabled={!initialized}>Action</a>
-      <a class="d-btn-info d-btn" href="/settings/infection" data-disabled={!initialized}
-        >Infection Flow</a
-      >
-    </div>
-  </section>
+    {#if context}
+      <section class="space-y-4">
+        <h3>Actions ({context.actions.length})</h3>
+        <a href="/settings/actions" class="d-btn-outline d-btn w-full">See Action Table</a>
+      </section>
+      <section class="space-y-4">
+        <h3>Infection</h3>
+        <div class="d-stats">
+          <div class="d-stat">
+            <div class="d-stat-figure">
+              <svg inline-src="lucide/bug" width="28" height="28" />
+            </div>
+            <p class="d-stat-title">Total Infections</p>
+            <p class="d-stat-value">{context.totalInfections}</p>
+            <p class="d-stat-desc">Infections to pool from at the start of each round</p>
+          </div>
 
-  <section class="space-y-4" class:opacity-25={!initialized}>
+          <div class="d-stat">
+            <div class="d-stat-figure">
+              <svg inline-src="lucide/user-plus" width="28" height="28" />
+            </div>
+            <p class="d-stat-title">Infection Base Delta</p>
+            <p class="d-stat-value">{context.newInfectionBaseDelta}</p>
+            <p class="d-stat-desc">Default number of infections at start of each round</p>
+          </div>
+        </div>
+        <a href="/settings/infection" class="d-btn-outline d-btn w-full"
+          >See Infection Transition Flow & Probabilities</a
+        >
+      </section>
+      <section class="space-y-4">
+        <h3>Hospital Capacity</h3>
+        <div class="d-stats">
+          <div class="d-stat">
+            <div class="d-stat-figure">
+              <svg inline-src="lucide/heart-pulse" width="28" height="28" />
+            </div>
+            <p class="d-stat-title">Regular Beds</p>
+            <p class="d-stat-value">{context.hospitalCapacity.regular}</p>
+          </div>
+
+          <div class="d-stat">
+            <div class="d-stat-figure">
+              <svg inline-src="lucide/heart" width="28" height="28" />
+            </div>
+            <p class="d-stat-title">Intensive Care Units</p>
+            <p class="d-stat-value">{context.hospitalCapacity.icu}</p>
+          </div>
+        </div>
+      </section>
+    {/if}
+  </section>
+  <div class="d-divider" />
+  <section class="space-y-4" class:opacity-25={!context}>
     <h2>3. Start simulation</h2>
-    <a class="d-btn-primary d-btn w-full" href="/simulation" data-disabled={!initialized}
+    <a class="d-btn-primary d-btn w-full" href="/simulation" data-disabled={!context}
       >Start Simulation</a
     >
   </section>
@@ -50,5 +95,28 @@
   a[data-disabled]:not([data-disabled='false']) {
     pointer-events: none;
     cursor: not-allowed;
+  }
+
+  .d-stats {
+    width: 100%;
+    background: theme('colors.neutral-100');
+
+    &:not(.actions) {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    & .d-stat {
+      row-gap: 8px;
+    }
+  }
+
+  h2 {
+    font-size: theme('fontSize.2xl');
+    font-weight: 700;
+  }
+
+  h3 {
+    font-size: theme('fontSize.xl');
+    font-weight: 700;
   }
 </style>

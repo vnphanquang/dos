@@ -13,6 +13,11 @@ export type Simulation = {
   queuedActions: Action[];
 };
 
+export const SESSION_STORAGE_KEYS = {
+  SIMULATION: 'simulation',
+  SIMULATION_HISTORY: 'simulation-history',
+} as const;
+
 export function createSimulation(context: SimulationContext) {
   // TODO: save history of actions too?
   const history: Array<Simulation> = [];
@@ -31,13 +36,22 @@ export function createSimulation(context: SimulationContext) {
     queuedActions,
   });
 
+  function current() {
+    return { context, infectionPool, infections, queuedActions };
+  }
+
+  subscribe((s) => {
+    sessionStorage.set(SESSION_STORAGE_KEYS.SIMULATION, JSON.stringify(s));
+    sessionStorage.set(SESSION_STORAGE_KEYS.SIMULATION_HISTORY, JSON.stringify(history));
+  });
+
   return {
     subscribe,
     history: {
       undo() {
         const popped = history.pop();
         if (!popped) return;
-        ({ context, infectionPool, infections } = popped);
+        ({ context, infectionPool, infections, queuedActions } = popped);
       },
       // TODO: support forwarding (redo) with history
     },
@@ -50,14 +64,7 @@ export function createSimulation(context: SimulationContext) {
       update((s) => ({ ...s, queuedActions }));
     },
     next() {
-      history.push(
-        structuredClone({
-          context,
-          infections,
-          infectionPool,
-          queuedActions,
-        }),
-      );
+      history.push(structuredClone(current()));
 
       // apply actions
       let infectionDelta = context.newInfectionBaseDelta;
@@ -88,7 +95,7 @@ export function createSimulation(context: SimulationContext) {
       }
       infections.push(...newInfections);
 
-      set({ context, infections, infectionPool, queuedActions });
+      set(current());
 
       return newInfections;
     },

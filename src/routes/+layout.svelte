@@ -10,8 +10,6 @@
 
 <slot />
 
-<p
-  class="fixed bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-gray-500 backdrop-blur-sm"
->
-  App version {data.version}
-</p>
+<footer class="mt-8 py-2">
+  <p class="whitespace-nowrap text-center text-xs text-gray-500">App version {data.version}</p>
+</footer>

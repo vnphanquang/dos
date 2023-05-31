@@ -9,6 +9,13 @@
     font-family: theme('fontFamily.inter');
   }
 
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 100dvh;
+  }
+
   *:disabled {
     cursor: not-allowed;
   }

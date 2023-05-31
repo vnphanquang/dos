@@ -1,4 +1,4 @@
-<main class="space-y-20 p-20">
+<main class="c-page space-y-20">
   <h1 class="text-bold text-center text-4xl">Disease Outbreak Simulation (DOS)</h1>
   <!-- <p class="text-center">Please select mode</p> -->
   <section class="mode-selection">

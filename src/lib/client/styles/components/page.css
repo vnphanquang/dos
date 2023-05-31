@@ -1,0 +1,11 @@
+.c-page {
+  flex: 1;
+
+  &:not(.c-page--full) {
+    padding: 24px;
+
+    @screen pc {
+      padding: 40px;
+    }
+  }
+}
