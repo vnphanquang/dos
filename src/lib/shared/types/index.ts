@@ -57,6 +57,17 @@ export type SimulationContext = {
   hospitalCapacity: Record<HospitalBed, number>;
 };
 
+export type SimulationRuntime = {
+  infectionPool: Infection[];
+  infections: Infection[];
+  queuedActions: Action[];
+};
+
+export type Simulation = {
+  context: SimulationContext;
+  runtime: SimulationRuntime;
+};
+
 export type Infection = {
   id: string;
   state: InfectionState;

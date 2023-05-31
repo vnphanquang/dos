@@ -25,8 +25,8 @@
 
   $: simulation = data.simulation;
 
-  $: stats = getInfectionStats($simulation?.infections ?? []);
-  $: iByHos = categorizeInfectionsByHospitalization($simulation?.infections ?? []);
+  $: stats = getInfectionStats($simulation?.runtime.infections ?? []);
+  $: iByHos = categorizeInfectionsByHospitalization($simulation?.runtime.infections ?? []);
 
   // TODO: possible to keep order on dropped (right now it jumps around);
   function handleDndConsider(e: CustomEvent<DndEvent<Infection>>, hos: Hospitalization) {
@@ -53,7 +53,6 @@
   const search = debounce((query: string) => {
     if (!fuse) return;
     actionSearchResult = fuse.search(query).map((r) => r.item);
-    console.log(actionSearchResult);
   }, 250);
 
   function handleSelectAction(action: Action) {
@@ -105,7 +104,7 @@
           <svg inline-src="lucide/user-plus" width="28" height="28" />
         </div>
         <p class="d-stat-title uppercase">Infection Pool</p>
-        <p class="d-stat-value">{$simulation?.infectionPool.length ?? 0}</p>
+        <p class="d-stat-value">{$simulation?.runtime.infectionPool.length ?? 0}</p>
         <p class="d-stat-desc">Number of infections to pool from in next rounds</p>
       </div>
     </div>
@@ -249,7 +248,7 @@
     </div>
     <div class="d-divider">Queued Actions</div>
     <ul class="space-y-2">
-      {#each $simulation?.queuedActions ?? [] as action}
+      {#each $simulation?.runtime.queuedActions ?? [] as action}
         <li>
           <div class="flex items-center rounded bg-neutral-300 p-2">
             <div class="flex-1">

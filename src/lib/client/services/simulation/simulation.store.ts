@@ -1,45 +1,42 @@
 import { writable } from 'svelte/store';
 
-import type { Action, Infection, SimulationContext } from '$shared/types';
+import { browser } from '$app/environment';
+import type { Action, Infection, Simulation, SimulationContext } from '$shared/types';
 
-import { setSimulationContext } from './simulation.cache';
+import {
+  getSimulationRuntime,
+  setSimulationContext,
+  setSimulationRuntime,
+} from './simulation.cache';
 import { transitionInfection } from './simulation.infection';
 
 import { createInfectionPool } from '.';
-
-export type Simulation = {
-  context: SimulationContext;
-  infectionPool: Infection[];
-  infections: Infection[];
-  queuedActions: Action[];
-};
 
 export type SimulationStore = ReturnType<typeof createSimulation>;
 
 export function createSimulation(context: SimulationContext) {
   // TODO: save history of actions too?
   const history: Array<Simulation> = [];
-  let infectionPool = createInfectionPool(
-    context.totalInfections,
-    context.infectionTransitionProbabilities.M0,
-    context.infectionTransitionProbabilities.C0,
-  );
-  let infections: Infection[] = [];
-  let queuedActions: Action[] = [];
 
-  const { subscribe, set, update } = writable<Simulation>({
+  let simulation: Simulation = {
     context,
-    infections,
-    infectionPool,
-    queuedActions,
-  });
+    runtime: (browser && getSimulationRuntime()) || {
+      queuedActions: [],
+      infectionPool: createInfectionPool(
+        context.totalInfections,
+        context.infectionTransitionProbabilities.M0,
+        context.infectionTransitionProbabilities.C0,
+      ),
+      infections: [],
+    },
+  };
 
-  function current() {
-    return { context, infectionPool, infections, queuedActions };
-  }
+  const { subscribe, set, update } = writable<Simulation>(simulation);
 
   subscribe((s) => {
+    simulation = s;
     setSimulationContext(s.context);
+    setSimulationRuntime(s.runtime);
   });
 
   return {
@@ -48,31 +45,46 @@ export function createSimulation(context: SimulationContext) {
       undo() {
         const popped = history.pop();
         if (!popped) return;
-        ({ context, infectionPool, infections, queuedActions } = popped);
+        simulation = popped;
       },
       // TODO: support forwarding (redo) with history
     },
     queueAction(action: Action) {
-      queuedActions = [...queuedActions, action];
-      update((s) => ({ ...s, queuedActions }));
+      update((s) => ({
+        ...s,
+        runtime: {
+          ...s.runtime,
+          queuedActions: s.runtime.queuedActions.concat(action),
+        },
+      }));
     },
     dequeueAction(...actions: Action[]) {
-      queuedActions = queuedActions.filter((a) => !actions.includes(a));
-      update((s) => ({ ...s, queuedActions }));
+      update((s) => ({
+        ...s,
+        runtime: {
+          ...s.runtime,
+          queuedActions: s.runtime.queuedActions.filter((a) => !actions.includes(a)),
+        },
+      }));
     },
     getInfectionById(id: string) {
-      return infections.find((i) => i.id === id);
+      return simulation.runtime.infections.find((i) => i.id === id);
     },
     updateInfection(infection: Infection) {
-      infections = infections.map((i) => (i.id === infection.id ? infection : i));
-      update((s) => ({ ...s, infections }));
+      update((s) => ({
+        ...s,
+        runtime: {
+          ...s.runtime,
+          infections: s.runtime.infections.map((i) => (i.id === infection.id ? infection : i)),
+        },
+      }));
     },
     next() {
-      history.push(structuredClone(current()));
+      history.push(structuredClone(simulation));
 
       // apply actions
       let infectionDelta = context.newInfectionBaseDelta;
-      for (const action of queuedActions) {
+      for (const action of simulation.runtime.queuedActions) {
         context.hospitalCapacity.regular += action.hospitalCapacityDelta.regular;
         context.hospitalCapacity.icu += action.hospitalCapacityDelta.icu;
         for (const [key, value] of Object.entries(action.infectionTransitionProbabilityDelta)) {
@@ -82,10 +94,10 @@ export function createSimulation(context: SimulationContext) {
         }
         infectionDelta += action.infectionDelta;
       }
-      queuedActions = [];
+      simulation.runtime.queuedActions = [];
 
       // transition existing infections
-      infections = infections.map((i) =>
+      simulation.runtime.infections = simulation.runtime.infections.map((i) =>
         transitionInfection(i, context.infectionTransitionProbabilities),
       );
 
@@ -93,13 +105,16 @@ export function createSimulation(context: SimulationContext) {
       const newInfections: Infection[] = [];
       if (infectionDelta > 0) {
         for (let i = 0; i < infectionDelta; i += 1) {
-          const [spliced] = infectionPool.splice(Math.random() * infectionPool.length, 1);
+          const [spliced] = simulation.runtime.infectionPool.splice(
+            Math.random() * simulation.runtime.infectionPool.length,
+            1,
+          );
           newInfections.push(spliced);
         }
       }
-      infections.push(...newInfections);
+      simulation.runtime.infections.push(...newInfections);
 
-      set(current());
+      set(simulation);
 
       return newInfections;
     },
