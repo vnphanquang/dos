@@ -2,14 +2,14 @@
   import { clickoutside } from '@svelte-put/clickoutside';
   import Fuse from 'fuse.js';
   import debounce from 'lodash.debounce';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { flip } from 'svelte/animate';
   import { slide } from 'svelte/transition';
   import { dndzone } from 'svelte-dnd-action';
 
   import { categorizeInfectionsByHospitalization } from '$client/services/simulation';
   import { HOSPITALIZATIONS, INFECTION_STATES } from '$shared/types';
-  import type { Hospitalization, Infection, Action } from '$shared/types';
+  import type { Hospitalization, Infection, Action, InfectionStats } from '$shared/types';
 
   export let data;
 
@@ -18,8 +18,8 @@
   $: simulation = data.simulation;
   $: history = simulation?.history;
   $: stats = simulation?.stats;
-  // let statsDelta: InfectionStats | null = null;
-  // $: if ($history?.length) statsDelta = $stats.delta;
+  $: step = simulation?.step;
+  let statsDelta: InfectionStats | undefined = undefined;
 
   // TODO: optimize this??
   $: iByHos = categorizeInfectionsByHospitalization(
@@ -78,6 +78,16 @@
       useExtendedSearch: true,
       threshold: 0.5,
     });
+
+    // FIXME: what if step is not defined on mount?
+    const unsubStep = step?.subscribe(async () => {
+      await tick();
+      statsDelta = $stats?.delta;
+    });
+
+    return () => {
+      unsubStep?.();
+    };
   });
 
   function simulationUndo() {
@@ -113,10 +123,10 @@
         <p class="d-stat-title uppercase">Active Infections</p>
         <p class="d-stat-value">
           <span>{$stats?.current.total ?? 0}</span>
-          {#if $stats?.delta.total}
-            {@const newTotal = $stats.delta.total}
-            {@const mild = $stats.new.byState.mild.total}
-            {@const critical = $stats.new.byState.critical.total}
+          {#if statsDelta?.total}
+            {@const newTotal = statsDelta.total ?? 0}
+            {@const mild = $stats?.new.byState.mild.total ?? 0}
+            {@const critical = $stats?.new.byState.critical.total ?? 0}
             <span class="delta" class:down={newTotal < 0} class:bad={newTotal > 0}>
               {Math.abs(newTotal)} ({mild} mild, {critical} critical)
             </span>
@@ -131,9 +141,9 @@
         <p class="d-stat-title uppercase">Infection Pool</p>
         <p class="d-stat-value">
           <span>{$simulation?.runtime.infectionPool.length ?? 0}</span>
-          {#if $stats?.delta.total}
+          {#if statsDelta?.total}
             <span class="delta neutral down">
-              {Math.abs($stats.delta.total)}
+              {Math.abs(statsDelta.total ?? 0)}
             </span>
           {/if}
         </p>
@@ -144,13 +154,13 @@
     <div class="d-stats grid-cols-4">
       {#each INFECTION_STATES as state}
         {@const byHos = $stats?.current.byState[state].byHospitalization}
-        {@const deltaByHos = $stats?.delta.byState[state].byHospitalization}
+        {@const deltaByHos = statsDelta?.byState[state].byHospitalization}
         <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
           <p class="d-stat-title uppercase">{state}</p>
           <p class="d-stat-value">
             <span>{$stats?.current.byState[state].total ?? 0}</span>
-            {#if $stats?.delta.byState[state].total}
-              {@const delta = $stats.delta.byState[state].total}
+            {#if statsDelta?.byState[state].total}
+              {@const delta = statsDelta.byState[state].total ?? 0}
               {@const isBad = state === 'recovered' ? delta < 0 : delta > 0}
               <span class="delta" class:down={delta < 0} class:bad={isBad}>
                 {Math.abs(delta)}
@@ -179,7 +189,7 @@
                 </span>
               {/if}
             </li>
-            {#if state !== 'recovered' && state !== 'mild'}
+            {#if state !== 'recovered'}
               <li>
                 <strong>{byHos?.icu ?? 0}</strong> icu
                 {#if deltaByHos?.icu}
@@ -205,7 +215,7 @@
     <div class="d-stats grid-cols-3">
       {#each HOSPITALIZATIONS as hos}
         {@const byState = $stats?.current.byHospitalization[hos].byState}
-        {@const deltaByState = $stats?.delta.byHospitalization[hos].byState}
+        {@const deltaByState = statsDelta?.byHospitalization[hos].byState}
         <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
           <p class="d-stat-title uppercase">{hos}</p>
           <p class="d-stat-value">
@@ -350,13 +360,13 @@
         type="button"
         class="d-btn-outline d-btn pc:min-w-[120px]"
         on:click={simulationUndo}
-        disabled={!$history?.length}>Undo</button
+        disabled={!$step}>Undo</button
       >
       <button
         type="button"
         class="d-btn-outline d-btn pc:min-w-[120px]"
         on:click={simulationRestart}
-        disabled={!$history?.length}>Restart</button
+        disabled={!$step}>Restart</button
       >
     </div>
     <div class="grid h-8 w-8 place-items-center rounded-full bg-secondary text-white">

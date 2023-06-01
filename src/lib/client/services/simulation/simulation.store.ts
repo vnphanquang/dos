@@ -92,11 +92,14 @@ export function createSimulation(context: SimulationContext) {
     };
   });
 
+  const stepStore = derived(historyStore, (h) => h.length);
+
   return {
     subscribe: simulationStore.subscribe,
     history: historyStore,
     newInfections: newInfectionsStore,
     stats: statsStore,
+    step: stepStore,
     queueAction(action: Action) {
       simulationStore.update((s) => ({
         ...s,
