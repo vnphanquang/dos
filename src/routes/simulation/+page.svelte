@@ -7,17 +7,9 @@
   import { slide } from 'svelte/transition';
   import { dndzone } from 'svelte-dnd-action';
 
-  import {
-    categorizeInfectionsByHospitalization,
-    getInfectionStats,
-  } from '$client/services/simulation';
-  import {
-    HOSPITALIZATIONS,
-    INFECTION_STATES,
-    type Hospitalization,
-    type Infection,
-    type Action,
-  } from '$shared/types';
+  import { categorizeInfectionsByHospitalization } from '$client/services/simulation';
+  import { HOSPITALIZATIONS, INFECTION_STATES } from '$shared/types';
+  import type { Hospitalization, Infection, Action } from '$shared/types';
 
   export let data;
 
@@ -25,8 +17,8 @@
 
   $: simulation = data.simulation;
   $: history = simulation?.history;
+  $: stats = simulation?.stats;
 
-  $: stats = getInfectionStats($simulation?.runtime.infections ?? []);
   // TODO: optimize this??
   $: iByHos = categorizeInfectionsByHospitalization(
     $simulation?.runtime.infections.filter((i) => i.state === 'mild' || i.state === 'critical') ??
@@ -117,7 +109,17 @@
           <svg inline-src="lucide/bug" width="28" height="28" />
         </div>
         <p class="d-stat-title uppercase">Active Infections</p>
-        <p class="d-stat-value">{stats.total}</p>
+        <p class="d-stat-value">
+          <span>{$stats?.current.total ?? 0}</span>
+          {#if $stats?.delta.total}
+            {@const newTotal = $stats.delta.total}
+            {@const mild = $stats.new.byState.mild.total}
+            {@const critical = $stats.new.byState.critical.total}
+            <span class="delta" class:down={newTotal < 0} class:bad={newTotal > 0}>
+              {Math.abs(newTotal)} ({mild} mild, {critical} critical)
+            </span>
+          {/if}
+        </p>
         <p class="d-stat-desc">Number of currently in-game infections</p>
       </div>
       <div class="d-stat gap-y-2">
@@ -125,7 +127,14 @@
           <svg inline-src="lucide/user-plus" width="28" height="28" />
         </div>
         <p class="d-stat-title uppercase">Infection Pool</p>
-        <p class="d-stat-value">{$simulation?.runtime.infectionPool.length ?? 0}</p>
+        <p class="d-stat-value">
+          <span>{$simulation?.runtime.infectionPool.length ?? 0}</span>
+          {#if $stats?.delta.total}
+            <span class="delta neutral down">
+              {Math.abs($stats.delta.total)}
+            </span>
+          {/if}
+        </p>
         <p class="d-stat-desc">Number of infections to pool from in next rounds</p>
       </div>
     </div>
@@ -134,17 +143,48 @@
       {#each INFECTION_STATES as state}
         <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
           <p class="d-stat-title uppercase">{state}</p>
-          <p class="d-stat-value">{stats.byState[state].total}</p>
+          <p class="d-stat-value">
+            <span>{$stats?.current.byState[state].total ?? 0}</span>
+            {#if $stats?.delta.byState[state].total}
+              {@const delta = $stats.delta.byState[state].total}
+              {@const isBad = state === 'recovered' ? delta < 0 : delta > 0}
+              <span class="delta" class:down={delta < 0} class:bad={isBad}>
+                {Math.abs(delta)}
+              </span>
+            {/if}
+          </p>
           <ul class="d-stat-desc">
             <li>
-              <strong>{stats.byState[state].byHospitalization.none}</strong> not hospitalized
+              <strong>{$stats?.current.byState[state].byHospitalization.none ?? 0}</strong> not
+              hospitalized
+              {#if $stats?.delta.byState[state].byHospitalization.none}
+                {@const delta = $stats.delta.byState[state].byHospitalization.none}
+                {@const isBad = state === 'recovered' ? delta < 0 : delta > 0}
+                <span class="delta" class:down={delta < 0} class:bad={isBad}>
+                  {Math.abs(delta)}
+                </span>
+              {/if}
             </li>
             <li>
-              <strong>{stats.byState[state].byHospitalization.regular}</strong> regular bed
+              <strong>{$stats?.current.byState[state].byHospitalization.regular ?? 0}</strong>
+              regular bed
+              {#if $stats?.delta.byState[state].byHospitalization.regular}
+                {@const delta = $stats.delta.byState[state].byHospitalization.regular}
+                {@const isBad = state === 'recovered' ? delta < 0 : delta > 0}
+                <span class="delta" class:down={delta < 0} class:bad={isBad}>
+                  {Math.abs(delta)}
+                </span>
+              {/if}
             </li>
             {#if state !== 'recovered' && state !== 'mild'}
               <li>
-                <strong>{stats.byState[state].byHospitalization.icu}</strong> icu
+                <strong>{$stats?.current.byState[state].byHospitalization.icu ?? 0}</strong> icu
+                {#if $stats?.delta.byState[state].byHospitalization.icu}
+                  {@const delta = $stats.delta.byState[state].byHospitalization.icu}
+                  <span class="delta" class:down={delta < 0} class:bad={delta > 0}>
+                    {Math.abs(delta)}
+                  </span>
+                {/if}
               </li>
             {/if}
           </ul>
@@ -165,8 +205,8 @@
         </div>
         <p class="d-stat-title uppercase">Regular Bed</p>
         <p class="d-stat-value">
-          {stats.byHospitalization.regular.total} / {$simulation?.context.hospitalCapacity
-            .regular ?? 0} <span class="text-base font-normal">occupied</span>
+          {$stats?.new.byHospitalization.regular.total ?? 0} / {$simulation?.context
+            .hospitalCapacity.regular ?? 0} <span class="text-base font-normal">occupied</span>
         </p>
       </div>
       <div class="d-stat gap-y-2">
@@ -175,7 +215,8 @@
         </div>
         <p class="d-stat-title uppercase">ICU</p>
         <p class="d-stat-value">
-          {stats.byHospitalization.icu.total} / {$simulation?.context.hospitalCapacity.icu ?? 0}
+          {$stats?.current.byHospitalization.icu.total ?? 0} / {$simulation?.context
+            .hospitalCapacity.icu ?? 0}
           <span class="text-base font-normal">occupied</span>
         </p>
       </div>
@@ -185,22 +226,49 @@
       {#each HOSPITALIZATIONS as hos}
         <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
           <p class="d-stat-title uppercase">{hos}</p>
-          <p class="d-stat-value">{stats.byHospitalization[hos].total}</p>
+          <p class="d-stat-value">{$stats?.current.byHospitalization[hos].total ?? 0}</p>
           <ul class="d-stat-desc">
             {#if hos !== 'icu'}
               <li>
-                <strong>{stats.byHospitalization[hos].byState.mild}</strong> mild infections
+                <strong>{$stats?.current.byHospitalization[hos].byState.mild ?? 0}</strong> mild
+                infections
+                {#if $stats?.delta.byHospitalization[hos].byState.mild}
+                  {@const delta = $stats?.delta.byHospitalization[hos].byState.mild}
+                  <span class="delta" class:down={delta < 0} class:bad={delta > 0}>
+                    {Math.abs(delta)}
+                  </span>
+                {/if}
               </li>
             {/if}
             <li>
-              <strong>{stats.byHospitalization[hos].byState.critical}</strong> critical infections
+              <strong>{$stats?.current.byHospitalization[hos].byState.critical}</strong> critical
+              infections
+              {#if $stats?.delta.byHospitalization[hos].byState.critical}
+                {@const delta = $stats?.delta.byHospitalization[hos].byState.critical}
+                <span class="delta" class:down={delta < 0} class:bad={delta > 0}>
+                  {Math.abs(delta)}
+                </span>
+              {/if}
             </li>
             <li>
-              <strong>{stats.byHospitalization[hos].byState.dead}</strong> dead infections
+              <strong>{$stats?.current.byHospitalization[hos].byState.dead}</strong> dead infections
+              {#if $stats?.delta.byHospitalization[hos].byState.dead}
+                {@const delta = $stats?.delta.byHospitalization[hos].byState.dead}
+                <span class="delta bad">
+                  {Math.abs(delta)}
+                </span>
+              {/if}
             </li>
             {#if hos !== 'icu'}
               <li>
-                <strong>{stats.byHospitalization[hos].byState.recovered}</strong> recovered infections
+                <strong>{$stats?.current.byHospitalization[hos].byState.recovered}</strong>
+                recovered infections
+                {#if $stats?.delta.byHospitalization[hos].byState.recovered}
+                  {@const delta = $stats?.delta.byHospitalization[hos].byState.recovered}
+                  <span class="delta">
+                    {Math.abs(delta)}
+                  </span>
+                {/if}
               </li>
             {/if}
           </ul>
@@ -254,7 +322,7 @@
       </label>
       {#if actionSearchResult.length && actionSearchFocused}
         <ul
-          transition:slide
+          transition:slide={{ duration: 250 }}
           class="absolute inset-x-0 top-full mt-2 max-h-[360px] overflow-auto border border-neutral-100 bg-neutral-100 py-2"
         >
           {#each actionSearchResult as action}
@@ -304,7 +372,7 @@
         disabled={!$history?.length}>Restart</button
       >
     </div>
-    <div class="grid h-8 w-8 place-items-center rounded-full bg-secondary">
+    <div class="grid h-8 w-8 place-items-center rounded-full bg-secondary text-white">
       {$history?.length ?? 0}
     </div>
     <div class="flex gap-4">
@@ -367,6 +435,29 @@
       &:active {
         cursor: grabbing;
       }
+    }
+  }
+
+  .delta {
+    font-size: theme('fontSize.xs');
+
+    &::before {
+      content: '↗';
+      display: inline-block;
+      margin-right: 2px;
+      font-size: 10px;
+    }
+
+    &:not(.neutral) {
+      color: theme('colors.green.500');
+    }
+
+    &.bad {
+      color: theme('colors.red.500');
+    }
+
+    &.down::before {
+      content: '↘ ';
     }
   }
 </style>

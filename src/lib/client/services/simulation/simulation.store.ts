@@ -1,9 +1,10 @@
-import { writable } from 'svelte/store';
+import { derived, writable } from 'svelte/store';
 
 import { browser } from '$app/environment';
 import type {
   Action,
   Infection,
+  InfectionStats,
   Simulation,
   SimulationContext,
   SimulationRuntime,
@@ -16,9 +17,9 @@ import {
   setSimulationHistory,
   setSimulationRuntime,
 } from './simulation.cache';
-import { transitionInfection } from './simulation.infection';
+import { getInfectionStats, transitionInfection } from './simulation.infection';
 
-import { createInfectionPool } from '.';
+import { createInfectionPool, recursiveTransform } from '.';
 
 export type SimulationStore = ReturnType<typeof createSimulation>;
 
@@ -34,15 +35,25 @@ function initRuntime(context: SimulationContext): SimulationRuntime {
   };
 }
 
+function getNewInfections(simulation: Simulation, history: Simulation[]) {
+  let newInfections: Infection[];
+  if (history.length === 0) {
+    newInfections = [];
+  }
+  const last = history[history.length - 1];
+  const delta = simulation.runtime.infections.length - last?.runtime.infections.length ?? 0;
+  newInfections = simulation.runtime.infections.slice(-delta);
+  return newInfections;
+}
+
 export function createSimulation(context: SimulationContext) {
   let simulation: Simulation = {
     context,
     runtime: (browser && getSimulationRuntime()) || initRuntime(context),
   };
 
-  const { subscribe, set, update } = writable<Simulation>(simulation);
-
-  subscribe((s) => {
+  const simulationStore = writable<Simulation>(simulation);
+  simulationStore.subscribe((s) => {
     simulation = s;
     setSimulationContext(s.context);
     setSimulationRuntime(s.runtime);
@@ -55,11 +66,38 @@ export function createSimulation(context: SimulationContext) {
     setSimulationHistory(h);
   });
 
+  const newInfectionsStore = derived([simulationStore, historyStore], ([s, h]) =>
+    getNewInfections(s, h),
+  );
+
+  const statsStore = derived([simulationStore, historyStore], ([s, h]) => {
+    let previousInfections: Infection[] = [];
+    if (history.length) {
+      previousInfections = history[history.length - 1].runtime.infections;
+    }
+    const newInfections = getNewInfections(s, h);
+
+    const currentStats = getInfectionStats(s.runtime.infections);
+    const previousStats = getInfectionStats(previousInfections);
+    const newStats = getInfectionStats(newInfections);
+    return {
+      current: currentStats,
+      delta: recursiveTransform<number, InfectionStats>(
+        currentStats,
+        previousStats,
+        (a, b) => a - b,
+      ),
+      new: newStats,
+    };
+  });
+
   return {
-    subscribe,
+    subscribe: simulationStore.subscribe,
     history: historyStore,
+    newInfections: newInfectionsStore,
+    stats: statsStore,
     queueAction(action: Action) {
-      update((s) => ({
+      simulationStore.update((s) => ({
         ...s,
         runtime: {
           ...s.runtime,
@@ -68,7 +106,7 @@ export function createSimulation(context: SimulationContext) {
       }));
     },
     dequeueAction(...actions: Action[]) {
-      update((s) => ({
+      simulationStore.update((s) => ({
         ...s,
         runtime: {
           ...s.runtime,
@@ -80,7 +118,7 @@ export function createSimulation(context: SimulationContext) {
       return simulation.runtime.infections.find((i) => i.id === id);
     },
     updateInfection(infection: Infection) {
-      update((s) => ({
+      simulationStore.update((s) => ({
         ...s,
         runtime: {
           ...s.runtime,
@@ -89,13 +127,13 @@ export function createSimulation(context: SimulationContext) {
       }));
     },
     restart() {
-      set({ context, runtime: initRuntime(context) });
+      simulationStore.set({ context, runtime: initRuntime(context) });
       historyStore.set([]);
     },
     undo() {
       const popped = history.pop();
       if (!popped) return;
-      set(popped);
+      simulationStore.set(popped);
       historyStore.set([...history]);
     },
     // TODO: support forwarding (redo) with history??
@@ -136,7 +174,7 @@ export function createSimulation(context: SimulationContext) {
       }
       simulation.runtime.infections.push(...newInfections);
 
-      set({ ...simulation });
+      simulationStore.set({ ...simulation });
 
       return newInfections;
     },
