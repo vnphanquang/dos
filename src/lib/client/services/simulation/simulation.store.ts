@@ -203,7 +203,6 @@ export function createSimulation(context: SimulationContext) {
         }
         return newI;
       });
-      console.log(transitions);
 
       // random new infections
       const newInfections: Infection[] = [];
