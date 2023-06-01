@@ -19,6 +19,7 @@
   $: history = simulation?.history;
   $: stats = simulation?.stats;
   $: step = simulation?.step;
+  $: transitions = simulation?.transitions;
   let statsDelta: InfectionStats | undefined = undefined;
 
   // TODO: optimize this??
@@ -266,6 +267,39 @@
                     {Math.abs(delta)}
                   </span>
                 {/if}
+              </li>
+            {/if}
+          </ul>
+        </div>
+      {/each}
+    </div>
+
+    <div class="d-divider text-gray-500">Infection Transition</div>
+    <div class="d-stats grid-cols-3">
+      {#each HOSPITALIZATIONS as hos}
+        <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
+          <p class="d-stat-title uppercase">{hos}</p>
+          <ul class="d-stat-desc">
+            {#if $transitions?.[hos].dead}
+              <li>
+                critical -> dead: <strong class="text-red-500">{$transitions[hos].dead}</strong>
+              </li>
+            {/if}
+            {#if $transitions?.[hos].recovered}
+              <li>
+                mild-> recovered: <strong class="text-green-500"
+                  >{$transitions[hos].recovered}</strong
+                >
+              </li>
+            {/if}
+            {#if $transitions?.[hos].mild}
+              <li>
+                critical-> mild: <strong class="text-green-500">{$transitions[hos].mild}</strong>
+              </li>
+            {/if}
+            {#if $transitions?.[hos].critical}
+              <li>
+                mild -> critical: <strong class="text-red-500">{$transitions[hos].critical}</strong>
               </li>
             {/if}
           </ul>

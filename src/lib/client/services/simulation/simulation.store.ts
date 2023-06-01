@@ -3,7 +3,9 @@ import { derived, writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import type {
   Action,
+  Hospitalization,
   Infection,
+  InfectionState,
   InfectionStats,
   Simulation,
   SimulationContext,
@@ -32,6 +34,29 @@ function initRuntime(context: SimulationContext): SimulationRuntime {
       context.infectionTransitionProbabilities.C0,
     ),
     infections: [],
+  };
+}
+
+function initTransitions(): Record<Hospitalization, Record<InfectionState, number>> {
+  return {
+    none: {
+      critical: 0,
+      dead: 0,
+      mild: 0,
+      recovered: 0,
+    },
+    regular: {
+      critical: 0,
+      dead: 0,
+      mild: 0,
+      recovered: 0,
+    },
+    icu: {
+      critical: 0,
+      dead: 0,
+      mild: 0,
+      recovered: 0,
+    },
   };
 }
 
@@ -94,12 +119,16 @@ export function createSimulation(context: SimulationContext) {
 
   const stepStore = derived(historyStore, (h) => h.length);
 
+  let transitions = initTransitions();
+  const transitionStore = writable(transitions);
+
   return {
     subscribe: simulationStore.subscribe,
     history: historyStore,
     newInfections: newInfectionsStore,
     stats: statsStore,
     step: stepStore,
+    transitions: transitionStore,
     queueAction(action: Action) {
       simulationStore.update((s) => ({
         ...s,
@@ -160,9 +189,21 @@ export function createSimulation(context: SimulationContext) {
       simulation.runtime.queuedActions = [];
 
       // transition existing infections
-      simulation.runtime.infections = simulation.runtime.infections.map((i) =>
-        transitionInfection(i, context.infectionTransitionProbabilities),
-      );
+      transitions = initTransitions();
+      simulation.runtime.infections = simulation.runtime.infections.map((i) => {
+        const newI = transitionInfection(i, context.infectionTransitionProbabilities);
+        if (i.state === 'critical' && newI.state === 'dead') {
+          transitions[i.hospitalization].dead += 1;
+        } else if (i.state === 'mild' && newI.state === 'recovered') {
+          transitions[i.hospitalization].recovered += 1;
+        } else if (i.state === 'mild' && newI.state === 'critical') {
+          transitions[i.hospitalization].critical += 1;
+        } else if (i.state === 'critical' && newI.state === 'mild') {
+          transitions[i.hospitalization].mild += 1;
+        }
+        return newI;
+      });
+      console.log(transitions);
 
       // random new infections
       const newInfections: Infection[] = [];
@@ -179,6 +220,7 @@ export function createSimulation(context: SimulationContext) {
       simulation.runtime.infections.push(...newInfections);
 
       simulationStore.set({ ...simulation });
+      transitionStore.set({ ...transitions });
 
       return newInfections;
     },
