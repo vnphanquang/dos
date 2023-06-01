@@ -91,6 +91,7 @@ export type InfectionStats = {
     Hospitalization,
     {
       total: number;
+      active: number;
       byState: Record<InfectionState, number>;
     }
   >;

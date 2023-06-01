@@ -73,6 +73,7 @@ export function getInfectionStats(infections: Infection[]): InfectionStats {
   >) {
     byHospitalizationStats[hospitalization] = {
       total: infections.length,
+      active: infections.filter((i) => i.state !== 'dead' && i.state !== 'recovered').length,
       byState: infections.reduce(
         (acc, current) => {
           acc[current.state]++;

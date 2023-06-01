@@ -80,6 +80,7 @@ export function createSimulation(context: SimulationContext) {
     const currentStats = getInfectionStats(s.runtime.infections);
     const previousStats = getInfectionStats(previousInfections);
     const newStats = getInfectionStats(newInfections);
+
     return {
       current: currentStats,
       delta: recursiveTransform<number, InfectionStats>(
