@@ -63,9 +63,6 @@
             <p class="d-stat-desc">Default number of infections at start of each round</p>
           </div>
         </div>
-        <a href="/settings/infection" class="d-btn-outline d-btn w-full"
-          >See Infection Transition Flow & Probabilities</a
-        >
       </section>
       <section class="space-y-4">
         <h3>Hospital Capacity</h3>

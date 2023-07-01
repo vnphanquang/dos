@@ -7,25 +7,16 @@ export const HOSPITALIZATIONS = ['none', ...HOSPITAL_BEDS] as const;
 export type Hospitalization = (typeof HOSPITALIZATIONS)[number];
 
 export const INFECTION_TRANSITION = [
-  'M0',
-  'C0',
-  // mild, not hospitalized
-  'M1',
-  'C1',
-  'R0',
-  // mid, hospitalized into regular bed
-  'M2',
-  'C2',
-  'R1',
-  // critical, hospitalized into regular bed
-  'C3',
-  'D0',
-  // critical, hospitalized into ICU
-  'M3',
-  'C4',
-  'D1',
-  // critical, not hospitalized
-  'D2',
+  'M0', // initial mild
+  'C0', // initial critical
+
+  'MM', // mild -> mild
+  'MC', // mild -> critical
+  'MR', // mild -> recovered
+
+  'CM', // critical -> mild
+  'CD', // critical -> dead
+  'CC', // critical -> critical
 ] as const;
 export type InfectionTransition = (typeof INFECTION_TRANSITION)[number];
 
@@ -71,7 +62,6 @@ export type Simulation = {
 export type Infection = {
   id: string;
   state: InfectionState;
-  hospitalization: Hospitalization;
 };
 
 export type SimulationState = {
@@ -84,15 +74,6 @@ export type InfectionStats = {
     InfectionState,
     {
       total: number;
-      byHospitalization: Record<Hospitalization, number>;
-    }
-  >;
-  byHospitalization: Record<
-    Hospitalization,
-    {
-      total: number;
-      active: number;
-      byState: Record<InfectionState, number>;
     }
   >;
 };

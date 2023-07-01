@@ -3,17 +3,14 @@
   import Fuse from 'fuse.js';
   import debounce from 'lodash.debounce';
   import { onMount, tick } from 'svelte';
-  import { flip } from 'svelte/animate';
   import { slide } from 'svelte/transition';
-  import { dndzone } from 'svelte-dnd-action';
 
-  import { categorizeInfectionsByHospitalization } from '$client/services/simulation';
-  import { HOSPITALIZATIONS, INFECTION_STATES } from '$shared/types';
-  import type { Hospitalization, Infection, Action, InfectionStats } from '$shared/types';
+  import { HOSPITAL_BEDS } from '$shared/types';
+  import type { Action, InfectionStats } from '$shared/types';
 
   export let data;
 
-  const flipDurationMs = 300;
+  const ACTIVE_STATES = ['mild', 'critical'] as const;
 
   $: simulation = data.simulation;
   $: history = simulation?.history;
@@ -21,27 +18,6 @@
   $: step = simulation?.step;
   $: transitions = simulation?.transitions;
   let statsDelta: InfectionStats | undefined = undefined;
-
-  // TODO: optimize this??
-  $: iByHos = categorizeInfectionsByHospitalization(
-    $simulation?.runtime.infections.filter((i) => i.state === 'mild' || i.state === 'critical') ??
-      [],
-  );
-
-  // TODO: possible to keep order on dropped (right now it jumps around);
-  function handleDndConsider(e: CustomEvent<DndEvent<Infection>>, hos: Hospitalization) {
-    iByHos[hos] = e.detail.items;
-  }
-
-  function handleDndFinalize(e: CustomEvent<DndEvent<Infection>>, hos: Hospitalization) {
-    iByHos[hos] = e.detail.items;
-
-    let infection = iByHos[hos].find((i) => i.id === e.detail.info.id);
-    if (infection) {
-      infection = { ...infection, hospitalization: hos };
-      simulation?.updateInfection(infection);
-    }
-  }
 
   let actionSearchQuery = '';
   let actionSearchResult: Action[] = [];
@@ -102,10 +78,6 @@
   function simulationNext() {
     simulation?.next();
   }
-
-  function simulationEnd() {
-    simulation?.end();
-  }
 </script>
 
 <main class="c-page c-page--full pt-10">
@@ -114,7 +86,7 @@
   <section class="space-y-4 bg-base-200 p-10">
     <div class="flex items-center">
       <h2 class="flex-1">Infections</h2>
-      <a href="/settings/infection" class="d-btn-ghost d-btn">Check Infection Transition Flow</a>
+      <a href="/settings" class="d-btn-ghost d-btn">Check Settings</a>
     </div>
     <div class="d-stats grid-cols-2">
       <div class="d-stat gap-y-2">
@@ -151,179 +123,69 @@
         <p class="d-stat-desc">Number of infections to pool from in next rounds</p>
       </div>
     </div>
-    <div class="d-divider text-gray-500">Active Infection Statistics</div>
-    <div class="d-stats grid-cols-4">
-      {#each INFECTION_STATES as state}
-        {@const byHos = $stats?.current.byState[state].byHospitalization}
-        {@const deltaByHos = statsDelta?.byState[state].byHospitalization}
+    <div class="d-divider text-gray-500">Active Infection</div>
+    <p class="text-sm text-gray-500">
+      This section displays the <strong>active</strong> count for mild and critical infections.
+    </p>
+    <div class="d-stats grid-cols-2">
+      {#each ACTIVE_STATES as state}
         <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
           <p class="d-stat-title uppercase">{state}</p>
           <p class="d-stat-value">
             <span>{$stats?.current.byState[state].total ?? 0}</span>
             {#if statsDelta?.byState[state].total}
               {@const delta = statsDelta.byState[state].total ?? 0}
-              {@const isBad = state === 'recovered' ? delta < 0 : delta > 0}
-              <span class="delta" class:down={delta < 0} class:bad={isBad}>
+              <span class="delta" class:down={delta < 0} class:bad={delta > 0}>
                 {Math.abs(delta)}
               </span>
             {/if}
           </p>
-          <ul class="d-stat-desc">
-            <li>
-              <strong>{byHos?.none ?? 0}</strong> not hospitalized
-              {#if deltaByHos?.none}
-                {@const delta = deltaByHos.none}
-                {@const isBad = state === 'recovered' ? delta < 0 : delta > 0}
-                <span class="delta" class:down={delta < 0} class:bad={isBad}>
-                  {Math.abs(delta)}
-                </span>
-              {/if}
-            </li>
-            <li>
-              <strong>{byHos?.regular ?? 0}</strong>
-              regular bed
-              {#if deltaByHos?.regular}
-                {@const delta = deltaByHos.regular}
-                {@const isBad = state === 'recovered' ? delta < 0 : delta > 0}
-                <span class="delta" class:down={delta < 0} class:bad={isBad}>
-                  {Math.abs(delta)}
-                </span>
-              {/if}
-            </li>
-            {#if state !== 'recovered'}
-              <li>
-                <strong>{byHos?.icu ?? 0}</strong> icu
-                {#if deltaByHos?.icu}
-                  {@const delta = deltaByHos.icu}
-                  <span class="delta" class:down={delta < 0} class:bad={delta > 0}>
-                    {Math.abs(delta)}
-                  </span>
-                {/if}
-              </li>
-            {/if}
-          </ul>
-        </div>
-      {/each}
-    </div>
-  </section>
-
-  <section class="space-y-4 p-10">
-    <div class="flex items-center">
-      <h2 class="flex-1">Hospitalization</h2>
-      <a href="/settings" class="d-btn-ghost d-btn">Check Settings</a>
-    </div>
-    <div class="d-divider text-gray-500">Hospitalization Statistics</div>
-    <div class="d-stats grid-cols-3">
-      {#each HOSPITALIZATIONS as hos}
-        {@const byState = $stats?.current.byHospitalization[hos].byState}
-        {@const deltaByState = statsDelta?.byHospitalization[hos].byState}
-        <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
-          <p class="d-stat-title uppercase">{hos}</p>
-          <p class="d-stat-value">
-            <span>
-              {$stats?.current.byHospitalization[hos].active ?? 0}
-              <span class="text-sm font-normal">active</span>
-              {#if hos !== 'none'}
-                / {$simulation?.context.hospitalCapacity[hos] ?? 0}
-                <span class="text-sm font-normal">units</span>
-              {/if}
-            </span>
-          </p>
-          <ul class="d-stat-desc">
-            <li>
-              <strong>{byState?.mild ?? 0}</strong> mild infections
-              {#if deltaByState?.mild}
-                {@const delta = deltaByState?.mild}
-                <span class="delta" class:down={delta < 0} class:bad={delta > 0}>
-                  {Math.abs(delta)}
-                </span>
-              {/if}
-            </li>
-            <li>
-              <strong>{byState?.critical}</strong> critical infections
-              {#if deltaByState?.critical}
-                {@const delta = deltaByState?.critical}
-                <span class="delta" class:down={delta < 0} class:bad={delta > 0}>
-                  {Math.abs(delta)}
-                </span>
-              {/if}
-            </li>
-            <li>
-              <strong>{byState?.dead}</strong> dead infections
-              {#if deltaByState?.dead}
-                {@const delta = deltaByState?.dead}
-                <span class="delta bad">
-                  {Math.abs(delta)}
-                </span>
-              {/if}
-            </li>
-            {#if hos !== 'icu'}
-              <li>
-                <strong>{byState?.recovered}</strong>
-                recovered infections
-                {#if deltaByState?.recovered}
-                  {@const delta = deltaByState?.recovered}
-                  <span class="delta">
-                    {Math.abs(delta)}
-                  </span>
-                {/if}
-              </li>
-            {/if}
-          </ul>
         </div>
       {/each}
     </div>
 
     <div class="d-divider text-gray-500">Infection Transition</div>
-    <div class="d-stats grid-cols-3">
-      {#each HOSPITALIZATIONS as hos}
+    <p class="text-sm text-gray-500">
+      This section lists infection transitions at the beginning of each round.
+    </p>
+    <p />
+    <div class="d-stats grid-cols-4">
+      <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
+        <p class="d-stat-title uppercase">MILD -> RECOVERED</p>
+        <p class="d-stat-value text-condition-recovered-fg">{$transitions?.recovered ?? 0}</p>
+      </div>
+      <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
+        <p class="d-stat-title uppercase">MILD -> CRITICAL</p>
+        <p class="d-stat-value text-condition-critical-fg">{$transitions?.critical ?? 0}</p>
+      </div>
+      <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
+        <p class="d-stat-title uppercase">CRITICAL -> DEAD</p>
+        <p class="d-stat-value text-condition-dead-fg">{$transitions?.dead ?? 0}</p>
+      </div>
+      <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
+        <p class="d-stat-title uppercase">CRITICAL -> MILD</p>
+        <p class="d-stat-value text-condition-mild-fg">{$transitions?.mild ?? 0}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="space-y-4 p-10">
+    <div class="flex items-center">
+      <h2 class="flex-1">Hospital Capacity</h2>
+      <a href="/settings" class="d-btn-ghost d-btn">Check Settings</a>
+    </div>
+    <div class="d-divider text-gray-500">Hospitalization Statistics</div>
+    <div class="d-stats grid-cols-2">
+      {#each HOSPITAL_BEDS as hos}
         <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
           <p class="d-stat-title uppercase">{hos}</p>
-          <ul class="d-stat-desc">
-            {#if $transitions?.[hos].dead}
-              <li>
-                critical -> dead: <strong class="text-red-500">{$transitions[hos].dead}</strong>
-              </li>
-            {/if}
-            {#if $transitions?.[hos].recovered}
-              <li>
-                mild-> recovered: <strong class="text-green-500"
-                  >{$transitions[hos].recovered}</strong
-                >
-              </li>
-            {/if}
-            {#if $transitions?.[hos].mild}
-              <li>
-                critical-> mild: <strong class="text-green-500">{$transitions[hos].mild}</strong>
-              </li>
-            {/if}
-            {#if $transitions?.[hos].critical}
-              <li>
-                mild -> critical: <strong class="text-red-500">{$transitions[hos].critical}</strong>
-              </li>
-            {/if}
-          </ul>
+          <p class="d-stat-value">
+            <span>
+              {$simulation?.context.hospitalCapacity[hos] ?? 0}
+              <span class="text-sm font-normal">units</span>
+            </span>
+          </p>
         </div>
-      {/each}
-    </div>
-
-    <div class="d-divider text-gray-500">Patient Distribution</div>
-    <p class="text-sm">Drag and drop patient to match desired hospitalization status</p>
-    <div class="hospitalization-dnd">
-      <p>No hospitalization</p>
-      <p>Regular</p>
-      <p>ICU</p>
-
-      {#each HOSPITALIZATIONS as hos}
-        <ul
-          use:dndzone={{ items: iByHos[hos], flipDurationMs }}
-          on:consider={(e) => handleDndConsider(e, hos)}
-          on:finalize={(e) => handleDndFinalize(e, hos)}
-        >
-          {#each iByHos[hos] as i (i.id)}
-            <li class="infection" animate:flip={{ duration: flipDurationMs }}>{i.state}</li>
-          {/each}
-        </ul>
       {/each}
     </div>
   </section>
@@ -388,6 +250,33 @@
     </ul>
   </section>
 
+  <section class="space-y-4 p-10">
+    <h2>Cumulative Statistics</h2>
+    <p class="text-sm text-gray-500">
+      This section lists cumulative infection and their terminal states.
+    </p>
+    <div class="d-stats grid-cols-3">
+      <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
+        <p class="d-stat-title uppercase">Total</p>
+        <p class="d-stat-value text-condition-mild-fg">
+          <span>{$stats?.current.total}</span>
+        </p>
+      </div>
+      <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
+        <p class="d-stat-title uppercase">Recovered</p>
+        <p class="d-stat-value text-condition-recovered-fg">
+          <span>{$stats?.current.byState.recovered.total}</span>
+        </p>
+      </div>
+      <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
+        <p class="d-stat-title uppercase">Dead</p>
+        <p class="d-stat-value text-condition-dead-fg">
+          <span>{$stats?.current.byState.dead.total}</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
   <section class="sticky bottom-0 flex items-center justify-between gap-4 bg-white p-4 px-10">
     <div class="flex gap-4">
       <button
@@ -409,11 +298,9 @@
     <div class="flex gap-4">
       <button
         type="button"
-        class="d-btn-outline d-btn-primary d-btn pc:min-w-[120px]"
-        on:click={simulationEnd}>End</button
-      >
-      <button type="button" class="d-btn-primary d-btn pc:min-w-[120px]" on:click={simulationNext}
-        >Next</button
+        class="d-btn-primary d-btn pc:min-w-[120px]"
+        on:click={simulationNext}
+        disabled={$simulation?.runtime.infectionPool.length === 0}>Next</button
       >
     </div>
   </section>
@@ -428,45 +315,6 @@
   h2 {
     font-size: theme('fontSize.2xl');
     font-weight: 700;
-  }
-
-  .hospitalization-dnd {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-
-    & > p,
-    & > ul {
-      padding: 8px;
-      text-align: center;
-      background-color: theme('colors.neutral-100');
-      border-radius: 4px;
-    }
-
-    & > p {
-      font-weight: 700;
-    }
-
-    & > ul {
-      overflow: auto;
-      max-height: 100dvh;
-      padding-bottom: 100px;
-    }
-
-    & > ul > * + * {
-      margin-top: 8px;
-    }
-
-    & .infection {
-      cursor: grab;
-      padding: 8px;
-      background-color: theme('colors.neutral-200');
-      border-radius: 4px;
-
-      &:active {
-        cursor: grabbing;
-      }
-    }
   }
 
   .delta {

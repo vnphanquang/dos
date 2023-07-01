@@ -11,10 +11,10 @@ export function createInfectionPool(
   const numCritical = total - numMild;
   const infections: Infection[] = [];
   for (let i = 0; i < numMild; i += 1) {
-    infections.push({ state: 'mild', hospitalization: 'none', id: crypto.randomUUID() });
+    infections.push({ state: 'mild', id: crypto.randomUUID() });
   }
   for (let i = 0; i < numCritical; i += 1) {
-    infections.push({ state: 'critical', hospitalization: 'none', id: crypto.randomUUID() });
+    infections.push({ state: 'critical', id: crypto.randomUUID() });
   }
   return shuffle(infections);
 }
