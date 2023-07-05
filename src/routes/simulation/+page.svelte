@@ -254,18 +254,21 @@
         <p class="d-stat-value text-condition-mild-fg">
           <span>{$stats?.current.total}</span>
         </p>
+        <p class="d-stat-desc">Cumulative number of infections</p>
       </div>
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <p class="d-stat-title uppercase">Recovered</p>
         <p class="d-stat-value text-condition-recovered-fg">
           <span>{$stats?.current.byState.recovered.total}</span>
         </p>
+        <p class="d-stat-desc">Cumulative number of recoveries</p>
       </div>
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <p class="d-stat-title uppercase">Dead</p>
         <p class="d-stat-value text-condition-dead-fg">
           <span>{$stats?.current.byState.dead.total}</span>
         </p>
+        <p class="d-stat-desc">Cumulative number of deaths</p>
       </div>
     </div>
   </section>
