@@ -5,6 +5,7 @@
   import { onMount, tick } from 'svelte';
   import { slide } from 'svelte/transition';
 
+  import LineGraph from '$client/components/LineGraph/LineGraph.svelte';
   import { HOSPITAL_BEDS } from '$shared/types';
   import type { Action, InfectionStats } from '$shared/types';
 
@@ -17,6 +18,9 @@
   $: stats = simulation?.stats;
   $: step = simulation?.step;
   $: transitions = simulation?.transitions;
+  $: dataviz = simulation?.dataviz;
+
+  $: console.log($dataviz);
   let statsDelta: InfectionStats | undefined = undefined;
 
   let actionSearchQuery = '';
@@ -321,6 +325,13 @@
           <span>{$stats?.infections.current.byState.dead.total ?? 0}</span>
         </p>
         <p class="d-stat-desc">Cumulative number of deaths</p>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-lg font-bold">Visualization Graphics</h3>
+      <div class="mt-4 grid grid-cols-2 gap-4">
+        <LineGraph data={$dataviz?.numInfections} title="Number of Infections per Round" />
       </div>
     </div>
   </section>

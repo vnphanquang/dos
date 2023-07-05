@@ -113,6 +113,21 @@ export function createSimulation(context: SimulationContext) {
   let transitions = initTransitions();
   const transitionStore = writable(transitions);
 
+  const datavizStore = derived(historyStore, (history) => {
+    const numInfections: Array<{ y: number; x: number }> = [];
+    for (let i = 0; i < history.length; i++) {
+      const simulation = history[i];
+      numInfections.push({
+        y: simulation.runtime.infections.length,
+        x: i + 1,
+      });
+    }
+
+    return {
+      numInfections,
+    };
+  });
+
   return {
     subscribe: simulationStore.subscribe,
     history: historyStore,
@@ -120,6 +135,7 @@ export function createSimulation(context: SimulationContext) {
     stats: statsStore,
     step: stepStore,
     transitions: transitionStore,
+    dataviz: datavizStore,
     queueAction(action: Action) {
       simulationStore.update((s) => ({
         ...s,
