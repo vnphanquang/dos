@@ -88,12 +88,9 @@
       <h2 class="flex-1">Infections</h2>
       <a href="/settings" class="d-btn-ghost d-btn">Check Settings</a>
     </div>
-    <div class="d-stats grid-cols-2">
+    <div class="d-stats grid-cols-3">
       <div class="d-stat gap-y-2">
-        <div class="d-stat-figure">
-          <svg inline-src="lucide/bug" width="28" height="28" />
-        </div>
-        <p class="d-stat-title uppercase">Active Infections</p>
+        <p class="d-stat-title uppercase">Total</p>
         <p class="d-stat-value">
           <span>{$stats?.current.total ?? 0}</span>
           {#if statsDelta?.total}
@@ -105,33 +102,16 @@
             </span>
           {/if}
         </p>
-        <p class="d-stat-desc">Number of infections that have occurred</p>
+        <p class="d-stat-desc">Cumulative number of infections that have occurred</p>
       </div>
-      <div class="d-stat gap-y-2">
-        <div class="d-stat-figure">
-          <svg inline-src="lucide/user-plus" width="28" height="28" />
-        </div>
-        <p class="d-stat-title uppercase">Infection Pool</p>
-        <p class="d-stat-value">
-          <span>{$simulation?.runtime.infectionPool.length ?? 0}</span>
-          {#if statsDelta?.total}
-            <span class="delta neutral down">
-              {Math.abs(statsDelta.total ?? 0)}
-            </span>
-          {/if}
-        </p>
-        <p class="d-stat-desc">Number of infections to pool from in next rounds</p>
-      </div>
-    </div>
-    <div class="d-divider text-gray-500">Active Infection</div>
-    <p class="text-sm text-gray-500">
-      This section displays the <strong>active</strong> count for mild and critical infections.
-    </p>
-    <div class="d-stats grid-cols-2">
       {#each ACTIVE_STATES as state}
         <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
           <p class="d-stat-title uppercase">{state}</p>
-          <p class="d-stat-value">
+          <p
+            class="d-stat-value"
+            class:text-condition-critical-fg={state === 'critical'}
+            class:text-condition-mild-fg={state === 'mild'}
+          >
             <span>{$stats?.current.byState[state].total ?? 0}</span>
             {#if statsDelta?.byState[state].total}
               {@const delta = statsDelta.byState[state].total ?? 0}
@@ -140,6 +120,7 @@
               </span>
             {/if}
           </p>
+          <p class="d-stat-desc">Number of <strong>active</strong> {state} infections</p>
         </div>
       {/each}
     </div>
@@ -153,18 +134,30 @@
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <p class="d-stat-title uppercase">MILD -> RECOVERED</p>
         <p class="d-stat-value text-condition-recovered-fg">{$transitions?.recovered ?? 0}</p>
+        <p class="d-stat-desc">
+          Number of infections transitioned from mild to recovered at the start of this round
+        </p>
       </div>
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <p class="d-stat-title uppercase">MILD -> CRITICAL</p>
         <p class="d-stat-value text-condition-critical-fg">{$transitions?.critical ?? 0}</p>
+        <p class="d-stat-desc">
+          Number of infections transitioned from mild to critical at the start of this round
+        </p>
       </div>
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <p class="d-stat-title uppercase">CRITICAL -> DEAD</p>
         <p class="d-stat-value text-condition-dead-fg">{$transitions?.dead ?? 0}</p>
+        <p class="d-stat-desc">
+          Number of infections transitioned from critical to dead at the start of this round
+        </p>
       </div>
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <p class="d-stat-title uppercase">CRITICAL -> MILD</p>
         <p class="d-stat-value text-condition-mild-fg">{$transitions?.mild ?? 0}</p>
+        <p class="d-stat-desc">
+          Number of infections transitioned from critical to mild at the start of this round
+        </p>
       </div>
     </div>
   </section>
