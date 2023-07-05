@@ -126,7 +126,7 @@ export function createSimulation(context: SimulationContext) {
         ...s,
         runtime: {
           ...s.runtime,
-          queuedActions: s.runtime.queuedActions.filter((a) => !actions.includes(a)),
+          queuedActions: s.runtime.queuedActions.filter((a) => !actions.some((b) => b === a)),
         },
       }));
     },
