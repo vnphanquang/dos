@@ -303,6 +303,10 @@
 </main>
 
 <style lang="postcss">
+  p {
+    text-wrap: wrap;
+  }
+
   .d-stats {
     width: 100%;
     background: theme('colors.neutral-100');
