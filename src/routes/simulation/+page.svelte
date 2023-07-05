@@ -59,7 +59,7 @@
     // FIXME: what if step is not defined on mount?
     const unsubStep = step?.subscribe(async () => {
       await tick();
-      statsDelta = $stats?.delta;
+      statsDelta = $stats?.infections.delta;
     });
 
     return () => {
@@ -83,7 +83,7 @@
 <main class="c-page c-page--full pt-10">
   <h1 class="mb-10 text-center text-4xl font-bold">Simulation</h1>
 
-  <section class="space-y-4 bg-base-200 p-10">
+  <section class="space-y-4 p-10">
     <div class="flex items-center">
       <h2 class="flex-1">Infections</h2>
       <a href="/settings" class="d-btn-ghost d-btn">Check Settings</a>
@@ -92,11 +92,11 @@
       <div class="d-stat gap-y-2">
         <p class="d-stat-title uppercase">Total</p>
         <p class="d-stat-value">
-          <span>{$stats?.current.total ?? 0}</span>
+          <span>{$stats?.infections.current.total ?? 0}</span>
           {#if statsDelta?.total}
             {@const newTotal = statsDelta.total ?? 0}
-            {@const mild = $stats?.new.byState.mild.total ?? 0}
-            {@const critical = $stats?.new.byState.critical.total ?? 0}
+            {@const mild = $stats?.infections.new.byState.mild.total ?? 0}
+            {@const critical = $stats?.infections.new.byState.critical.total ?? 0}
             <span class="delta" class:down={newTotal < 0} class:bad={newTotal > 0}>
               {Math.abs(newTotal)} ({mild} mild, {critical} critical)
             </span>
@@ -112,7 +112,7 @@
             class:text-condition-critical-fg={state === 'critical'}
             class:text-condition-mild-fg={state === 'mild'}
           >
-            <span>{$stats?.current.byState[state].total ?? 0}</span>
+            <span>{$stats?.infections.current.byState[state].total ?? 0}</span>
             {#if statsDelta?.byState[state].total}
               {@const delta = statsDelta.byState[state].total ?? 0}
               <span class="delta" class:down={delta < 0} class:bad={delta > 0}>
@@ -129,7 +129,6 @@
     <p class="text-sm text-gray-500">
       This section lists infection transitions at the beginning of each round.
     </p>
-    <p />
     <div class="d-stats grid-cols-4">
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <p class="d-stat-title uppercase">MILD -> RECOVERED</p>
@@ -158,6 +157,51 @@
         <p class="d-stat-desc">
           Number of infections transitioned from critical to mild at the start of this round
         </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="space-y-4 p-10">
+    <div class="flex items-center">
+      <h2 class="flex-1">Token Status</h2>
+      <a href="/settings" class="d-btn-ghost d-btn">Check Settings</a>
+    </div>
+    <p class="text-sm text-gray-500">
+      This section lists the remaining tokens and indicates changes at the start of each round (if
+      any).
+    </p>
+    <div class="d-stats grid-cols-2">
+      <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
+        <div class="d-stat-figure">
+          <svg inline-src="lucide/coins" width="28" height="28" />
+        </div>
+        <p class="d-stat-title uppercase">Policy Maker</p>
+        <p class="d-stat-value">
+          <span>{$simulation?.context.tokens.policyMaker ?? 0}</span>
+          {#if $stats?.tokenDelta.policyMaker}
+            {@const delta = $stats.tokenDelta.policyMaker}
+            <span class="delta down bad" class:down={delta < 0} class:bad={delta < 0}
+              >{Math.abs(delta)}</span
+            >
+          {/if}
+        </p>
+        <p class="d-stat-desc">Remaining tokens</p>
+      </div>
+      <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
+        <div class="d-stat-figure">
+          <svg inline-src="lucide/coins" width="28" height="28" />
+        </div>
+        <p class="d-stat-title uppercase">Hospital Manager</p>
+        <p class="d-stat-value">
+          <span>{$simulation?.context.tokens.hospitalManager ?? 0}</span>
+          {#if $stats?.tokenDelta.hospitalManager}
+            {@const delta = $stats.tokenDelta.hospitalManager}
+            <span class="delta down bad" class:down={delta < 0} class:bad={delta < 0}
+              >{Math.abs(delta)}</span
+            >
+          {/if}
+        </p>
+        <p class="d-stat-desc">Remaining tokens</p>
       </div>
     </div>
   </section>
@@ -227,11 +271,19 @@
     <ul class="space-y-2">
       {#each $simulation?.runtime.queuedActions ?? [] as action}
         <li>
-          <div class="flex items-center rounded bg-neutral-300 p-2">
-            <div class="flex-1">
-              <p class="text-sm text-gray-500">{action.id} ({action.role})</p>
-              <p class="text-lg">{action.name}</p>
-            </div>
+          <div
+            class="grid grid-cols-[40px,160px,100px,1fr,auto] items-center gap-2 rounded bg-neutral-300 p-2"
+          >
+            <p class="text-sm text-gray-500">({action.id})</p>
+            <p><strong>{action.role}</strong></p>
+            <p
+              class:text-red-500={action.tokenDelta < 0}
+              class:text-green-500={action.tokenDelta > 0}
+            >
+              {action.tokenDelta > 0 ? '+' : '-'}
+              {Math.abs(action.tokenDelta)} tokens
+            </p>
+            <p>{action.name}</p>
             <button
               type="button"
               class="d-btn-ghost d-btn"
@@ -252,21 +304,21 @@
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <p class="d-stat-title uppercase">Total</p>
         <p class="d-stat-value text-condition-mild-fg">
-          <span>{$stats?.current.total}</span>
+          <span>{$stats?.infections.current.total ?? 0}</span>
         </p>
         <p class="d-stat-desc">Cumulative number of infections</p>
       </div>
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <p class="d-stat-title uppercase">Recovered</p>
         <p class="d-stat-value text-condition-recovered-fg">
-          <span>{$stats?.current.byState.recovered.total}</span>
+          <span>{$stats?.infections.current.byState.recovered.total ?? 0}</span>
         </p>
         <p class="d-stat-desc">Cumulative number of recoveries</p>
       </div>
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <p class="d-stat-title uppercase">Dead</p>
         <p class="d-stat-value text-condition-dead-fg">
-          <span>{$stats?.current.byState.dead.total}</span>
+          <span>{$stats?.infections.current.byState.dead.total ?? 0}</span>
         </p>
         <p class="d-stat-desc">Cumulative number of deaths</p>
       </div>

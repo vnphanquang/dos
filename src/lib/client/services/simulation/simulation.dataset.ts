@@ -31,6 +31,7 @@ export const ActionSchema = z.object({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }, {} as any) as Record<HospitalBed, z.ZodNumber>,
   ),
+  tokenDelta: z.coerce.number().default(0),
 });
 
 export function parseActionsFromCSV(csv: string): Action[] {
@@ -45,6 +46,7 @@ export function parseActionsFromCSV(csv: string): Action[] {
       'name',
       'description',
       'infectionDelta',
+      'tokenDelta',
       ...INFECTION_TRANSITION,
       ...HOSPITAL_BEDS,
     ] satisfies Array<ActionDatasetKey>,
@@ -67,17 +69,31 @@ export function parseActionsFromCSV(csv: string): Action[] {
   return actions;
 }
 
+const START_CONTEXT_CONFIG_COLUMN_INDEX = 6;
 export function parseInitialContextValuesFromCSV(csv: string): Omit<SimulationContext, 'actions'> {
   const parsed = parse(csv, {
     fromLine: 3,
     toLine: 3,
   });
-  const [M0, C0, MM, MR, MC, CC, CD, CM, regular, icu, totalInfections, newInfectionBaseDelta] =
-    parsed[0].slice(5).map((v: string) => {
-      let numStr = v as string;
-      if (numStr.endsWith('%')) numStr = numStr.slice(0, -1);
-      return Number(numStr);
-    });
+  const [
+    M0,
+    C0,
+    MM,
+    MR,
+    MC,
+    CC,
+    CD,
+    CM,
+    regular,
+    icu,
+    totalInfections,
+    newInfectionBaseDelta,
+    baseToken,
+  ] = parsed[0].slice(START_CONTEXT_CONFIG_COLUMN_INDEX).map((v: string) => {
+    let numStr = v as string;
+    if (numStr.endsWith('%')) numStr = numStr.slice(0, -1);
+    return Number(numStr);
+  });
   return {
     hospitalCapacity: {
       regular,
@@ -94,6 +110,10 @@ export function parseInitialContextValuesFromCSV(csv: string): Omit<SimulationCo
       CC,
       CD,
       CM,
+    },
+    tokens: {
+      policyMaker: baseToken,
+      hospitalManager: baseToken,
     },
   };
 }

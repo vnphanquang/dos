@@ -43,6 +43,28 @@
         <a href="/settings/actions" class="d-btn-outline d-btn w-full">See Action Table</a>
       </section>
       <section class="space-y-4">
+        <h3>Token</h3>
+        <div class="d-stats">
+          <div class="d-stat">
+            <div class="d-stat-figure">
+              <svg inline-src="lucide/coins" width="28" height="28" />
+            </div>
+            <p class="d-stat-title">Policy Maker</p>
+            <p class="d-stat-value">{context.tokens.policyMaker}</p>
+            <p class="d-stat-desc">Base tokens to start with</p>
+          </div>
+
+          <div class="d-stat">
+            <div class="d-stat-figure">
+              <svg inline-src="lucide/coins" width="28" height="28" />
+            </div>
+            <p class="d-stat-title">Policy Maker</p>
+            <p class="d-stat-value">{context.tokens.hospitalManager}</p>
+            <p class="d-stat-desc">Base tokens to start with</p>
+          </div>
+        </div>
+      </section>
+      <section class="space-y-4">
         <h3>Infection</h3>
         <div class="d-stats">
           <div class="d-stat">

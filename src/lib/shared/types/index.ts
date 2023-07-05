@@ -31,6 +31,7 @@ export type Action = {
   hospitalCapacityDelta: Record<HospitalBed, number>;
   infectionDelta: number;
   infectionTransitionProbabilityDelta: Record<InfectionTransition, number>;
+  tokenDelta: number;
 };
 
 export type ActionDatasetKey =
@@ -46,6 +47,10 @@ export type SimulationContext = {
   totalInfections: number;
   newInfectionBaseDelta: number;
   hospitalCapacity: Record<HospitalBed, number>;
+  tokens: {
+    policyMaker: number;
+    hospitalManager: number;
+  };
 };
 
 export type SimulationRuntime = {
@@ -66,6 +71,11 @@ export type Infection = {
 
 export type SimulationState = {
   infections: Infection[];
+};
+
+export type Stats = {
+  tokens: SimulationContext['tokens'];
+  infections: InfectionStats;
 };
 
 export type InfectionStats = {
