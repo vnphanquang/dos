@@ -134,7 +134,15 @@ export function createSimulation(context: SimulationContext) {
         ...s,
         runtime: {
           ...s.runtime,
-          queuedActions: s.runtime.queuedActions.filter((a) => !actions.some((b) => b === a)),
+          queuedActions: s.runtime.queuedActions.filter((queuedAction) => {
+            for (let i = 0; i < actions.length; i++) {
+              if (queuedAction.id === actions[i].id) {
+                actions.splice(i, 1);
+                return false;
+              }
+            }
+            return true;
+          }),
         },
       }));
     },
