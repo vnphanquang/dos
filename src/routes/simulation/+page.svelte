@@ -174,38 +174,21 @@
       This section lists the remaining tokens and indicates changes at the start of each round (if
       any).
     </p>
-    <div class="d-stats grid-cols-2">
+    <div class="d-stats max-w-lg grid-cols-1">
       <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
         <div class="d-stat-figure">
           <svg inline-src="lucide/coins" width="28" height="28" />
         </div>
-        <p class="d-stat-title uppercase">Policy Maker</p>
+        <p class="d-stat-title uppercase">Remaining Tokens</p>
         <p class="d-stat-value">
-          <span>{$simulation?.context.tokens.policyMaker ?? 0}</span>
-          {#if $stats?.tokenDelta.policyMaker}
-            {@const delta = $stats.tokenDelta.policyMaker}
+          <span>{$simulation?.context.numTokens ?? 0}</span>
+          {#if $stats?.tokenDelta}
+            {@const delta = $stats.tokenDelta}
             <span class="delta down bad" class:down={delta < 0} class:bad={delta < 0}
               >{Math.abs(delta)}</span
             >
           {/if}
         </p>
-        <p class="d-stat-desc">Remaining tokens</p>
-      </div>
-      <div class="d-stat grid-rows-[auto,auto,1fr] gap-y-2">
-        <div class="d-stat-figure">
-          <svg inline-src="lucide/coins" width="28" height="28" />
-        </div>
-        <p class="d-stat-title uppercase">Hospital Manager</p>
-        <p class="d-stat-value">
-          <span>{$simulation?.context.tokens.hospitalManager ?? 0}</span>
-          {#if $stats?.tokenDelta.hospitalManager}
-            {@const delta = $stats.tokenDelta.hospitalManager}
-            <span class="delta down bad" class:down={delta < 0} class:bad={delta < 0}
-              >{Math.abs(delta)}</span
-            >
-          {/if}
-        </p>
-        <p class="d-stat-desc">Remaining tokens</p>
       </div>
     </div>
   </section>

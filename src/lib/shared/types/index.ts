@@ -47,10 +47,7 @@ export type SimulationContext = {
   totalInfections: number;
   newInfectionBaseDelta: number;
   hospitalCapacity: Record<HospitalBed, number>;
-  tokens: {
-    policyMaker: number;
-    hospitalManager: number;
-  };
+  numTokens: number;
 };
 
 export type SimulationRuntime = {
@@ -74,7 +71,7 @@ export type SimulationState = {
 };
 
 export type Stats = {
-  tokens: SimulationContext['tokens'];
+  numTokens: SimulationContext['numTokens'];
   infections: InfectionStats;
 };
 

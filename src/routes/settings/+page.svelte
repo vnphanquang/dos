@@ -44,29 +44,19 @@
       </section>
       <section class="space-y-4">
         <h3>Token</h3>
-        <div class="d-stats">
+        <div class="d-stats max-w-lg">
           <div class="d-stat">
             <div class="d-stat-figure">
               <svg inline-src="lucide/coins" width="28" height="28" />
             </div>
-            <p class="d-stat-title">Policy Maker</p>
-            <p class="d-stat-value">{context.tokens.policyMaker}</p>
-            <p class="d-stat-desc">Base tokens to start with</p>
-          </div>
-
-          <div class="d-stat">
-            <div class="d-stat-figure">
-              <svg inline-src="lucide/coins" width="28" height="28" />
-            </div>
-            <p class="d-stat-title">Policy Maker</p>
-            <p class="d-stat-value">{context.tokens.hospitalManager}</p>
-            <p class="d-stat-desc">Base tokens to start with</p>
+            <p class="d-stat-title">Base Number of Tokens</p>
+            <p class="d-stat-value">{context.numTokens}</p>
           </div>
         </div>
       </section>
       <section class="space-y-4">
         <h3>Infection</h3>
-        <div class="d-stats">
+        <div class="d-stats grid-cols-2">
           <div class="d-stat">
             <div class="d-stat-figure">
               <svg inline-src="lucide/bug" width="28" height="28" />
@@ -88,7 +78,7 @@
       </section>
       <section class="space-y-4">
         <h3>Hospital Capacity</h3>
-        <div class="d-stats">
+        <div class="d-stats grid-cols-2">
           <div class="d-stat">
             <div class="d-stat-figure">
               <svg inline-src="lucide/heart-pulse" width="28" height="28" />
@@ -126,10 +116,6 @@
   .d-stats {
     width: 100%;
     background: theme('colors.neutral-100');
-
-    &:not(.actions) {
-      grid-template-columns: 1fr 1fr;
-    }
 
     & .d-stat {
       row-gap: 8px;

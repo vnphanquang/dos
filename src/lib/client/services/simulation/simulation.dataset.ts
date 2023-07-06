@@ -88,7 +88,7 @@ export function parseInitialContextValuesFromCSV(csv: string): Omit<SimulationCo
     icu,
     totalInfections,
     newInfectionBaseDelta,
-    baseToken,
+    numTokens,
   ] = parsed[0].slice(START_CONTEXT_CONFIG_COLUMN_INDEX).map((v: string) => {
     let numStr = v as string;
     if (numStr.endsWith('%')) numStr = numStr.slice(0, -1);
@@ -111,10 +111,7 @@ export function parseInitialContextValuesFromCSV(csv: string): Omit<SimulationCo
       CD,
       CM,
     },
-    tokens: {
-      policyMaker: baseToken,
-      hospitalManager: baseToken,
-    },
+    numTokens,
   };
 }
 

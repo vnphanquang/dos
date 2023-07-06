@@ -90,12 +90,13 @@ export function createSimulation(context: SimulationContext) {
     const previousStats = getInfectionStats(previousInfections);
     const newStats = getInfectionStats(newInfections);
 
+    let tokenDelta = 0;
+    if (previousSimulation) {
+      tokenDelta = s.context.numTokens - previousSimulation.context.numTokens;
+    }
+
     return {
-      tokenDelta: recursiveTransform<number, SimulationContext['tokens']>(
-        s.context.tokens,
-        previousSimulation?.context.tokens ?? s.context.tokens,
-        (a, b) => a - b,
-      ),
+      tokenDelta,
       infections: {
         current: currentStats,
         delta: recursiveTransform<number, InfectionStats>(
@@ -119,7 +120,7 @@ export function createSimulation(context: SimulationContext) {
       const simulation = history[i];
       numInfections.push({
         y: simulation.runtime.infections.length,
-        x: i + 1,
+        x: i,
       });
     }
 
@@ -193,11 +194,7 @@ export function createSimulation(context: SimulationContext) {
       // apply actions
       let infectionDelta = context.newInfectionBaseDelta;
       for (const action of simulation.runtime.queuedActions) {
-        if (action.role === 'Hospital Manager') {
-          context.tokens.hospitalManager += action.tokenDelta;
-        } else if (action.role === 'Policy Maker') {
-          context.tokens.policyMaker += action.tokenDelta;
-        }
+        context.numTokens += action.tokenDelta;
         context.hospitalCapacity.regular += action.hospitalCapacityDelta.regular;
         context.hospitalCapacity.icu += action.hospitalCapacityDelta.icu;
         for (const [key, value] of Object.entries(action.infectionTransitionProbabilityDelta)) {
