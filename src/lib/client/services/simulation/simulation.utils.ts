@@ -32,3 +32,13 @@ export function recursiveTransform<T, R extends object>(
   }
   return result;
 }
+
+export function downloadProgrammatically(data: string, filename: string) {
+  const encodedUri = encodeURI(data);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', filename);
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+}

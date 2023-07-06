@@ -1,14 +1,15 @@
 import { derived, writable } from 'svelte/store';
 
 import { browser } from '$app/environment';
-import type {
-  Action,
-  Infection,
-  InfectionState,
-  InfectionStats,
-  Simulation,
-  SimulationContext,
-  SimulationRuntime,
+import {
+  INFECTION_TRANSITION,
+  type Action,
+  type Infection,
+  type InfectionState,
+  type InfectionStats,
+  type Simulation,
+  type SimulationContext,
+  type SimulationRuntime,
 } from '$shared/types';
 
 import {
@@ -19,7 +20,7 @@ import {
 } from './simulation.cache';
 import { getInfectionStats, transitionInfection } from './simulation.infection';
 
-import { createInfectionPool, recursiveTransform } from '.';
+import { createInfectionPool, downloadProgrammatically, recursiveTransform } from '.';
 
 export type SimulationStore = ReturnType<typeof createSimulation>;
 
@@ -240,6 +241,71 @@ export function createSimulation(context: SimulationContext) {
       transitionStore.set({ ...transitions });
 
       return newInfections;
+    },
+    export(kind: 'actions' | 'progression') {
+      const simulations = [...history, simulation];
+      if (kind === 'actions') {
+        let csvAction = 'data:text/csv;charset=utf-8,';
+        csvAction +=
+          'round,id,role,name,description,infection_delta,token_delta,hospital_capacity_delta\r\n';
+        for (let i = 0; i < simulations.length; i++) {
+          const simulation = simulations[i];
+          const actions = simulation.runtime.queuedActions;
+          for (const action of actions) {
+            const row = [
+              i,
+              action.id,
+              action.role,
+              action.name ?? '',
+              action.description ?? '',
+              action.infectionDelta ?? 0,
+              action.tokenDelta ?? 0,
+            ];
+            csvAction += row.join(',') + `\r\n`;
+          }
+        }
+        downloadProgrammatically(csvAction, 'report_simulation_actions.csv');
+        return;
+      }
+
+      if (kind === 'progression') {
+        let csvAction = 'data:text/csv;charset=utf-8,';
+        csvAction += `round,num_infections,num_mild,num_critical,num_death,num_recovered,num_icu,num_regular,num_tokens,${INFECTION_TRANSITION.map(
+          (t) => `infection_transition_${t}`,
+        ).join(',')}\r\n`;
+        for (let i = 0; i < simulations.length; i++) {
+          const simulation = simulations[i];
+          const { infections } = simulation.runtime;
+          const { hospitalCapacity, numTokens, infectionTransitionProbabilities } =
+            simulation.context;
+          const numMild = infections.filter((i) => i.state === 'mild').length;
+          const numCritical = infections.filter((i) => i.state === 'critical').length;
+          const numDeath = infections.filter((i) => i.state === 'dead').length;
+          const numRecovered = infections.filter((i) => i.state === 'recovered').length;
+          const row = [
+            i,
+            infections.length,
+            numMild,
+            numCritical,
+            numDeath,
+            numRecovered,
+            hospitalCapacity.icu,
+            hospitalCapacity.regular,
+            numTokens,
+            infectionTransitionProbabilities.M0,
+            infectionTransitionProbabilities.C0,
+            infectionTransitionProbabilities.MM,
+            infectionTransitionProbabilities.MC,
+            infectionTransitionProbabilities.MR,
+            infectionTransitionProbabilities.CM,
+            infectionTransitionProbabilities.CD,
+            infectionTransitionProbabilities.CC,
+          ];
+          csvAction += row.join(',') + `\r\n`;
+        }
+        downloadProgrammatically(csvAction, 'report_simulation_progression_.csv');
+        return;
+      }
     },
   };
 }

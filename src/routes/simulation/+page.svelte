@@ -283,7 +283,23 @@
   </section>
 
   <section class="space-y-4 p-10">
-    <h2>Cumulative Statistics</h2>
+    <div class="flex items-center">
+      <h2 class="flex-1">Cumulative Statistics</h2>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          class="d-btn-outline d-btn"
+          on:click={data.simulation?.export.bind(data.simulation, 'actions')}
+          >Export Action Report</button
+        >
+        <button
+          type="button"
+          class="d-btn-outline d-btn"
+          on:click={data.simulation?.export.bind(data.simulation, 'progression')}
+          >Export Progression Report</button
+        >
+      </div>
+    </div>
     <p class="text-sm text-gray-500">
       This section lists cumulative infection and their terminal states.
     </p>
