@@ -20,7 +20,6 @@
   $: transitions = simulation?.transitions;
   $: dataviz = simulation?.dataviz;
 
-  $: console.log($dataviz);
   let statsDelta: InfectionStats | undefined = undefined;
 
   let actionSearchQuery = '';

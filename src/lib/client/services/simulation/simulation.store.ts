@@ -116,6 +116,7 @@ export function createSimulation(context: SimulationContext) {
   const transitionStore = writable(transitions);
 
   const datavizStore = derived(historyStore, (history) => {
+    // FIXME: mixing current simulation?
     const numInfections: Array<{ y: number; x: number }> = [];
     for (let i = 0; i < history.length; i++) {
       const simulation = history[i];
